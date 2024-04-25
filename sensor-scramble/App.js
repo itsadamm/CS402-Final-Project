@@ -2,9 +2,12 @@ import * as React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button } from 'react-native';
+import { StyleSheet, Text, View, Button, Platform, Image, TouchableOpacity } from 'react-native';
 import { StackActions } from '@react-navigation/native';
 import { CommonActions } from '@react-navigation/native';
+import {useState, useEffect, list} from 'react';
+import { Camera, CameraType } from 'expo-camera';
+import { useWindowDimensions } from 'react-native';
 
 // Navigation docs here: https://reactnavigation.org/docs/getting-started/
 
@@ -86,7 +89,7 @@ const NewGameScreen = ({navigation, route}) => {
           })
         )
       }
-    />
+      />
   </View>;
 };
 
@@ -114,28 +117,94 @@ const RoundIntroScreen = ({navigation, route}) => {
 };
 
 const CameraScreen = ({navigation, route}) => {
+  const SCREEN_WIDTH = useWindowDimensions().width;
+  const SCREEN_HEIGHT = useWindowDimensions().height;
+  const [type, setType] = useState(CameraType.back);
+  const [permission, requestPermission] = Camera.useCameraPermissions();
+  var scam = {width: SCREEN_WIDTH, height: SCREEN_WIDTH*(4/3)}
+
+  if (!permission) {
+    // Camera permissions are still loading
+    return <View />;
+  }
+
+  if (!permission.granted) {
+    // Camera permissions are not granted yet
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
+        <Button onPress={requestPermission} title="grant permission" />
+      </View>
+    );
+  }
+
+  function toggleCameraType() {
+    setType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
+  }
+
+  var takePhoto = async () => {
+    console.log("Taking photo");
+    if (this.SnapCamera) {
+      let photo = await this.SnapCamera.takePictureAsync({onPictureSaved: this.onPictureSaved});
+      
+    }
+  }
+  
+  onPictureSaved = photo => {
+    console.log(photo);
+    photo.name="CS402PHOTOROUND" + route.params.roundNum;
+    console.log("Took Photo")
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'RoundEndScreen',
+            params: {roundNum: route.params.roundNum, prevPhoto: photo}
+          },
+        ],
+      })
+    )
+  } 
+  
+  const camref = React.createRef();
+  var cam = <Camera style={styles.camera, scam} type={type}ref={ref => {
+        this.SnapCamera = ref;
+      }}>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={toggleCameraType}>
+          <Text style={styles.text}>Flip Camera</Text>
+        </TouchableOpacity>
+        <View
+          style={{
+          alignSelf: 'center',
+          flex: 1,
+          alignItems: 'center',
+        }}
+        >
+          <TouchableOpacity
+            onPress={takePhoto}
+            style={{
+            width: 70,
+            height: 70,
+            top: 400,
+            borderRadius: 50,
+            backgroundColor: '#fff'
+          }}
+          />
+    </View>
+      </View>
+    </Camera>
+
   return <View>
-    <Text>This is where the camera will be</Text>
-    <Button
-      title="Take Photo"
-      onPress={() =>
-        navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [
-                {
-                  name: 'RoundEndScreen',
-                  params: {roundNum: route.params.roundNum}
-                },
-              ],
-            })
-          )
-        }
-    />
+    {cam}
+    <Text>Take a photo to continue!</Text>
   </View>;
 };
 
 const RoundEndScreen = ({navigation, route}) => {
+  const SCREEN_WIDTH = useWindowDimensions().width;
+  const SCREEN_HEIGHT = useWindowDimensions().height;
   nextButton = <Button
     title="Next Round"
     onPress={() =>
@@ -172,6 +241,7 @@ const RoundEndScreen = ({navigation, route}) => {
     />
   }
   return <View>
+    <Image style={{width: SCREEN_WIDTH, height: SCREEN_WIDTH*4/3, alignSelf:"center"}} source={{uri: route.params.prevPhoto.uri,}} />
     <Text>You Got: Angle 37.5 - Target: 40 - Score: 50</Text>
     {nextButton}
   </View>;
@@ -211,6 +281,12 @@ const AboutScreen = ({navigation, route}) => {
 };
 
 const styles = StyleSheet.create({
+  camera: {
+    flex: 1,
+    width: 1000,
+    height: 1000,
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#fff',
