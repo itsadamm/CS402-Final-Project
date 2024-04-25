@@ -168,7 +168,7 @@ const CameraScreen = ({navigation, route}) => {
   } 
   
   const camref = React.createRef();
-  var cam = <Camera style={styles.camera, scam} type={type}ref={ref => {
+  var cam = <Camera style={[styles.camera, scam]} type={type}ref={ref => {
         this.SnapCamera = ref;
       }}>
       <View style={styles.buttonContainer}>
