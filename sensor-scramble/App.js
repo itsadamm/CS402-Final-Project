@@ -5,9 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button, Platform, Image, TouchableOpacity } from 'react-native';
 import { StackActions } from '@react-navigation/native';
 import { CommonActions } from '@react-navigation/native';
-import {useState, useEffect, list} from 'react';
+import {useState, useEffect, useRef, list} from 'react';
 import { Camera, CameraType } from 'expo-camera';
 import { useWindowDimensions } from 'react-native';
+import { DeviceMotion } from 'expo-sensors';
 
 // Navigation docs here: https://reactnavigation.org/docs/getting-started/
 
@@ -94,9 +95,10 @@ const NewGameScreen = ({navigation, route}) => {
 };
 
 const RoundIntroScreen = ({navigation, route}) => {
+  const [targetAngle, setTargetAngle] = React.useState(Math.floor(Math.random() * 361)); // Random angle from 0 to 360
   return <View>
     <Text>Round {route.params.roundNum} !</Text>
-    <Text>Your target values are... </Text>
+    <Text>Your target value is...{targetAngle}° </Text>
     <Button
       title="Next"
       onPress={() =>
@@ -106,7 +108,7 @@ const RoundIntroScreen = ({navigation, route}) => {
             routes: [
               {
                 name: 'CameraScreen',
-                params: {roundNum: route.params.roundNum}
+                params: {roundNum: route.params.roundNum, targetAngle}
               },
             ],
           })
@@ -122,18 +124,52 @@ const CameraScreen = ({navigation, route}) => {
   const [type, setType] = useState(CameraType.back);
   const [permission, requestPermission] = Camera.useCameraPermissions();
   var scam = {width: SCREEN_WIDTH, height: SCREEN_WIDTH*(4/3)}
+  const { targetAngle } = route.params;
+  const [orientationData, setOrientationData] = useState({ alpha: 0 });
+  const [referenceAngle, setReferenceAngle] = useState(null);
+  const [isReady, setIsReady] = useState(false);
+  const cameraRef = useRef(null);
 
-  if (!permission) {
-    // Camera permissions are still loading
-    return <View />;
+  useEffect(() => {
+    if (permission && permission.granted) {
+        setIsReady(true);
+        DeviceMotion.setUpdateInterval(500);
+        const subscription = DeviceMotion.addListener(motionData => {
+            if (motionData.rotation) {
+                const alphaDegrees = (motionData.rotation.alpha * 180 / Math.PI + 360) % 360;
+                setOrientationData({ alpha: alphaDegrees });
+                console.log(`Alpha Rotation: ${alphaDegrees} degrees`);
+            }
+        });
+
+        return () => subscription.remove();
+    } else if (permission && !permission.granted) {
+        requestPermission();
+    }
+}, [permission]);
+
+const setCustomReference = () => {
+  setReferenceAngle(orientationData.alpha);
+  console.log(`Reference angle set at: ${orientationData.alpha} degrees`);
+};
+
+const calculateAdjustedAngle = (angle) => {
+  if (referenceAngle !== null) {
+    let actualAngle = angle + referenceAngle;
+    if (actualAngle < 360){
+      return (actualAngle - 360) * -1;
+    }else{
+      return (actualAngle - 720) * -1;
+    }
   }
+  return orientationData.alpha;
+};
 
-  if (!permission.granted) {
-    // Camera permissions are not granted yet
+  if (!isReady) {
     return (
       <View style={styles.container}>
-        <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
-        <Button onPress={requestPermission} title="grant permission" />
+        <Text style={{ textAlign: 'center' }}>Loading or need permissions...</Text>
+        <Button onPress={requestPermission} title="Grant Permission" />
       </View>
     );
   }
@@ -142,35 +178,89 @@ const CameraScreen = ({navigation, route}) => {
     setType(current => (current === CameraType.back ? CameraType.front : CameraType.back));
   }
 
-  var takePhoto = async () => {
-    console.log("Taking photo");
-    if (this.SnapCamera) {
-      let photo = await this.SnapCamera.takePictureAsync({onPictureSaved: this.onPictureSaved});
-      
+  const takePhoto = async () => {
+    if (cameraRef.current) {
+        const photo = await cameraRef.current.takePictureAsync();
+        const actualAngle = calculateAdjustedAngle(orientationData.alpha);
+        console.log("Photo taken", photo);
+        console.log("Actual Alpha Angle:", actualAngle);
+        onPictureSaved(photo, actualAngle);
+    } else {
+        console.log("Camera ref is not set");
     }
-  }
-  
-  onPictureSaved = photo => {
-    console.log(photo);
-    photo.name="CS402PHOTOROUND" + route.params.roundNum;
-    console.log("Took Photo")
+};
+
+const onPictureSaved = (photo, actualAngle) => {
+    console.log("Took Photo", `Actual Angle: ${actualAngle}`);
     navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'RoundEndScreen',
-            params: {roundNum: route.params.roundNum, prevPhoto: photo}
-          },
-        ],
-      })
-    )
-  } 
+        CommonActions.reset({
+            index: 0,
+            routes: [
+                {
+                    name: 'RoundEndScreen',
+                    params: {
+                        roundNum: route.params.roundNum,
+                        prevPhoto: photo,
+                        actualAngle: actualAngle,
+                        targetAngle: route.params.targetAngle
+                    },
+                },
+            ],
+        })
+    );
+};
+
+  // var takePhoto = async () => {
+  //   console.log("Taking photo");
+  //   Gyroscope.setUpdateInterval(100); // Update every 1/10th of a second
+  //   const subscription = Gyroscope.addListener(gyroscopeData => {
+  //       const actualAngle = Math.round(gyroscopeData.x);
+  //       console.log("Current Gyro X Angle:", actualAngle);
+  //       if (cameraRef.current) {
+  //         cameraRef.current.takePictureAsync()
+  //         .then(photo => {
+  //             onPictureSaved(photo, actualAngle);
+  //         })
+  //         .catch(err => {
+  //             console.log("Error taking photo:", err);
+  //         })
+  //         .finally(() => {
+  //             subscription.remove(); // Ensure removal of listener
+  //         });
+  //     } else {
+  //         console.log("Camera ref is not set");
+  //         subscription.remove(); // Ensure removal of listener
+  //     }
+  // });
+
+  // // Optionally remove the listener if no photo is taken after a timeout
+  // setTimeout(() => {
+  //     subscription.remove();
+  // }, 5000);
+  // }
   
-  const camref = React.createRef();
-  var cam = <Camera style={[styles.camera, scam]} type={type}ref={ref => {
-        this.SnapCamera = ref;
-      }}>
+  // onPictureSaved = photo => {
+  //   console.log(photo);
+  //   photo.name="CS402PHOTOROUND" + route.params.roundNum;
+  //   console.log("Took Photo")
+  //   navigation.dispatch(
+  //     CommonActions.reset({
+  //       index: 0,
+  //       routes: [
+  //         {
+  //           name: 'RoundEndScreen',
+  //           params: {roundNum: route.params.roundNum, 
+  //                   prevPhoto: photo,
+  //                   actualAngle: actualAngle,
+  //                   targetAngle: route.params.targetAngle}
+  //         },
+  //       ],
+  //     })
+  //   )
+  // } 
+  
+  var cam = <Camera style={[styles.camera, scam]} type={type}ref={cameraRef}
+  >
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button} onPress={toggleCameraType}>
           <Text style={styles.text}>Flip Camera</Text>
@@ -194,17 +284,47 @@ const CameraScreen = ({navigation, route}) => {
           />
     </View>
       </View>
+
     </Camera>
 
   return <View>
     {cam}
     <Text>Take a photo to continue!</Text>
+    <Button title="Set Zero Angle" onPress={setCustomReference} />
   </View>;
+};
+
+const calculateScore = (actualAngle, targetAngle) => {
+  const angleDifference = Math.abs(actualAngle - targetAngle);
+
+  if (angleDifference <= 5) {
+    return 1000;
+  } else if (angleDifference <= 10) {
+    return 950;
+  } else if (angleDifference <= 15) {
+    return 900;
+  } else if (angleDifference <= 30) {
+    return 800;
+  } else if (angleDifference <= 50) {
+    return 700;
+  } else if (angleDifference <= 70) {
+    return 600;
+  } else if (angleDifference <= 90) {
+    return 500;
+  } else if (angleDifference <= 120) {
+    return 300;
+  } else if (angleDifference <= 180) {
+    return 100;
+  } else {
+    return 0;
+  }
 };
 
 const RoundEndScreen = ({navigation, route}) => {
   const SCREEN_WIDTH = useWindowDimensions().width;
   const SCREEN_HEIGHT = useWindowDimensions().height;
+  const { actualAngle, targetAngle, prevPhoto } = route.params;
+  const score = calculateScore(actualAngle, targetAngle);
   nextButton = <Button
     title="Next Round"
     onPress={() =>
@@ -242,7 +362,7 @@ const RoundEndScreen = ({navigation, route}) => {
   }
   return <View>
     <Image style={{width: SCREEN_WIDTH, height: SCREEN_WIDTH*4/3, alignSelf:"center"}} source={{uri: route.params.prevPhoto.uri,}} />
-    <Text>You Got: Angle 37.5 - Target: 40 - Score: 50</Text>
+    <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {score}</Text>
     {nextButton}
   </View>;
 };
