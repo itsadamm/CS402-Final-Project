@@ -2,7 +2,7 @@ import * as React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, Platform, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Button, Platform, Image, TouchableOpacity, TextInput } from 'react-native';
 import { StackActions } from '@react-navigation/native';
 import { CommonActions } from '@react-navigation/native';
 import {useState, useEffect, useRef, list} from 'react';
@@ -209,55 +209,6 @@ const onPictureSaved = (photo, actualAngle) => {
         })
     );
 };
-
-  // var takePhoto = async () => {
-  //   console.log("Taking photo");
-  //   Gyroscope.setUpdateInterval(100); // Update every 1/10th of a second
-  //   const subscription = Gyroscope.addListener(gyroscopeData => {
-  //       const actualAngle = Math.round(gyroscopeData.x);
-  //       console.log("Current Gyro X Angle:", actualAngle);
-  //       if (cameraRef.current) {
-  //         cameraRef.current.takePictureAsync()
-  //         .then(photo => {
-  //             onPictureSaved(photo, actualAngle);
-  //         })
-  //         .catch(err => {
-  //             console.log("Error taking photo:", err);
-  //         })
-  //         .finally(() => {
-  //             subscription.remove(); // Ensure removal of listener
-  //         });
-  //     } else {
-  //         console.log("Camera ref is not set");
-  //         subscription.remove(); // Ensure removal of listener
-  //     }
-  // });
-
-  // // Optionally remove the listener if no photo is taken after a timeout
-  // setTimeout(() => {
-  //     subscription.remove();
-  // }, 5000);
-  // }
-  
-  // onPictureSaved = photo => {
-  //   console.log(photo);
-  //   photo.name="CS402PHOTOROUND" + route.params.roundNum;
-  //   console.log("Took Photo")
-  //   navigation.dispatch(
-  //     CommonActions.reset({
-  //       index: 0,
-  //       routes: [
-  //         {
-  //           name: 'RoundEndScreen',
-  //           params: {roundNum: route.params.roundNum, 
-  //                   prevPhoto: photo,
-  //                   actualAngle: actualAngle,
-  //                   targetAngle: route.params.targetAngle}
-  //         },
-  //       ],
-  //     })
-  //   )
-  // } 
   
   var cam = <Camera style={[styles.camera, scam]} type={type}ref={cameraRef}
   >
@@ -325,75 +276,143 @@ const RoundEndScreen = ({navigation, route}) => {
   const SCREEN_HEIGHT = useWindowDimensions().height;
   const { actualAngle, targetAngle, prevPhoto } = route.params;
   const score = calculateScore(actualAngle, targetAngle);
-  nextButton = <Button
-    title="Next Round"
-    onPress={() =>
-      navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [
-              {
-                name: 'RoundIntroScreen',
-                params: {roundNum: Number(route.params.roundNum)+1}
-              },
-            ],
-          })
-        )
-      }
-  />
+  const totalScore = (route.params.totalScore || 0) + score; // Add current round score to total
+  const handleNextRound = () => {
+      const nextRoundNum = Number(route.params.roundNum) + 1;
+      navigation.navigate('RoundIntroScreen', {
+          roundNum: nextRoundNum,
+          totalScore: totalScore  // Pass updated totalScore to next round
+      });
+  };
+
+  const handleFinalRoundEnd = () => {
+      navigation.navigate('ResultsScreen', {
+          totalScore: totalScore  // Pass final totalScore to results screen
+      });
+  };
+
+  return (
+    <View>
+        <Image style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 4 / 3, alignSelf: "center" }} source={{ uri: route.params.prevPhoto.uri }} />
+        <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {score}</Text>
+        {route.params.roundNum < 3 ? (
+            <Button title="Next Round" onPress={handleNextRound} />
+        ) : (
+            <Button title="See Results" onPress={handleFinalRoundEnd} />
+        )}
+    </View>
+);
+};
+  //   nextButton = <Button
+//     title="Next Round"
+//     onPress={() =>
+//       navigation.dispatch(
+//           CommonActions.reset({
+//             index: 0,
+//             routes: [
+//               {
+//                 name: 'RoundIntroScreen',
+//                 params: {roundNum: Number(route.params.roundNum)+1,
+//                         totalScore: newTotalScore}
+//               },
+//             ],
+//           })
+//         )
+//       }
+//   />
   
-  // If at final round, go to results page
-  if (route.params.roundNum == 3){
-    nextButton = <Button
-    title="See Results"
-    onPress={() =>
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [
-              {
-                name: 'ResultsScreen',
-              },
-            ],
-          })
-        )
+//   // If at final round, go to results page
+//   if (route.params.roundNum == 3){
+//     nextButton = <Button
+//     title="See Results"
+//     onPress={() =>
+//         navigation.dispatch(
+//           CommonActions.reset({
+//             index: 0,
+//             routes: [
+//               {
+//                 name: 'ResultsScreen',
+//                 totalScore: totalScore, 
+//               },
+//             ],
+//           })
+//         )
+//       }
+//     />
+//   }
+//   return <View>
+//     <Image style={{width: SCREEN_WIDTH, height: SCREEN_WIDTH*4/3, alignSelf:"center"}} source={{uri: route.params.prevPhoto.uri,}} />
+//     <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {score}</Text>
+//     {nextButton}
+//   </View>;
+// };
+
+
+
+const ResultsScreen = ({ navigation, route }) => {
+  const [name, setName] = useState('');
+  const totalScore = route.params.totalScore || 0; // Safeguard against undefined totalScore
+
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch('https://cs.boisestate.edu/~scutchin/cs402/project/saveson.php?user=team5Leaderboards', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: name, score: totalScore }),
+      });
+      if (response.ok) {
+        navigation.navigate('Leaderboard');
+      } else {
+        console.error('Failed to submit score');
       }
-    />
-  }
-  return <View>
-    <Image style={{width: SCREEN_WIDTH, height: SCREEN_WIDTH*4/3, alignSelf:"center"}} source={{uri: route.params.prevPhoto.uri,}} />
-    <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {score}</Text>
-    {nextButton}
-  </View>;
+    } catch (error) {
+      console.error('Error submitting score:', error);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text>Total Score: {totalScore}</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter your name"
+        value={name}
+        onChangeText={setName}
+      />
+      <Button
+        title="Submit and view Leaderboard"
+        onPress={handleSubmit}
+      />
+    </View>
+  );
 };
 
-const ResultsScreen = ({navigation, route}) => {
-  // Reset navigation stack so you can't go back
+const LeaderboardScreen = () => {
+  const [leaderboard, setLeaderboard] = useState([]);
 
-
-  return <View>
-    <Text>Total Score: 2000</Text>
-    <Text>Enter name:</Text>
-    <Button
-      title="Submit and view Leaderboard"
-      onPress={() => {
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 1,
-            routes: [
-              { name: 'Home' },
-              { name: 'Leaderboard' },
-            ],
-          })
-        );
-        } 
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const response = await fetch('https://cs.boisestate.edu/~scutchin/cs402/project/loadjson.php?user=team5Leaderboards');
+        const data = await response.json();
+        setLeaderboard(data);
+      } catch (error) {
+        console.error('Failed to fetch leaderboard:', error);
       }
-    />
-  </View>;
-};
+    };
 
-const LeaderboardScreen = ({navigation, route}) => {  
-  return <Text>#1 | John | 999 pts...</Text>;
+    fetchLeaderboard();
+  }, []);
+
+  return (
+    <ScrollView>
+      {leaderboard.map((entry, index) => (
+        <Text key={index}>{index + 1} | {entry.name} | {entry.score} pts</Text>
+      ))}
+    </ScrollView>
+  );
 };
 
 const AboutScreen = ({navigation, route}) => {
