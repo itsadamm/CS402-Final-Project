@@ -84,7 +84,7 @@ const NewGameScreen = ({navigation, route}) => {
             routes: [
               {
                 name: 'RoundIntroScreen',
-                params: { roundNum: '1' },
+                params: { roundNum: 1, totalScore: 0},
               },
             ],
           })
@@ -108,7 +108,7 @@ const RoundIntroScreen = ({navigation, route}) => {
             routes: [
               {
                 name: 'CameraScreen',
-                params: {roundNum: route.params.roundNum, targetAngle}
+                params: {roundNum: route.params.roundNum, targetAngle, totalScore: route.params.totalScore}
               },
             ],
           })
@@ -203,7 +203,8 @@ const onPictureSaved = (photo, actualAngle) => {
                         roundNum: route.params.roundNum,
                         prevPhoto: photo,
                         actualAngle: actualAngle,
-                        targetAngle: route.params.targetAngle
+                        targetAngle: route.params.targetAngle,
+                        totalScore: route.params.totalScore
                     },
                 },
             ],
@@ -217,7 +218,7 @@ const onPictureSaved = (photo, actualAngle) => {
         <TouchableOpacity style={styles.button} onPress={toggleCameraType}>
           <Text style={styles.text}>Flip Camera</Text>
         </TouchableOpacity>
-        <View style={[styles.overlayLine, {transform: [{rotate: String(calculateAdjustedAngle(orientationData.alpha)+90) + "deg"}]}]}/>
+        <View style={[styles.overlayLine, {transform: [{rotate: String(calculateAdjustedAngle(orientationData.alpha/2)+90) + "deg"}]}]}/>
         <Text>Current Angle: {calculateAdjustedAngle(orientationData.alpha)}</Text>
         <View
           style={{
@@ -250,7 +251,7 @@ const onPictureSaved = (photo, actualAngle) => {
 
 const calculateScore = (actualAngle, targetAngle) => {
   const angleDifference = Math.abs(actualAngle - targetAngle);
-
+  console.log('Actual Angle: ' + actualAngle + ' | Target Angle: ' +  targetAngle + ' | Diff: ' + angleDifference)
   if (angleDifference <= 5) {
     return 1000;
   } else if (angleDifference <= 10) {
@@ -278,16 +279,17 @@ const RoundEndScreen = ({navigation, route}) => {
   const SCREEN_WIDTH = useWindowDimensions().width;
   const SCREEN_HEIGHT = useWindowDimensions().height;
   const { actualAngle, targetAngle, prevPhoto } = route.params;
-  const score = calculateScore(actualAngle, targetAngle);
-  const totalScore = (route.params.totalScore || 0) + score; // Add current round score to total
+  let score = calculateScore(actualAngle, targetAngle);
+  const totalScore = (route.params.totalScore + score); // Add current round score to total
+  console.log("Total Score: " + totalScore)
   const handleNextRound = () => {
       const nextRoundNum = Number(route.params.roundNum) + 1;
       navigation.navigate('RoundIntroScreen', {
-          roundNum: nextRoundNum,
-          totalScore: totalScore  // Pass updated totalScore to next round
+        roundNum: nextRoundNum,
+        totalScore: totalScore  // Pass updated totalScore to next round
       });
-  };
-
+    };
+    
   const handleFinalRoundEnd = () => {
       navigation.navigate('ResultsScreen', {
           totalScore: totalScore  // Pass final totalScore to results screen
@@ -297,7 +299,7 @@ const RoundEndScreen = ({navigation, route}) => {
   return (
     <View>
         <Image style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 4 / 3, alignSelf: "center" }} source={{ uri: route.params.prevPhoto.uri }} />
-        <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {score}</Text>
+        <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {String(score)}</Text>
         {route.params.roundNum < 3 ? (
             <Button title="Next Round" onPress={handleNextRound} />
         ) : (
@@ -355,8 +357,10 @@ const RoundEndScreen = ({navigation, route}) => {
 const ResultsScreen = ({ navigation, route }) => {
   const [name, setName] = useState('');
   const totalScore = route.params.totalScore || 0; // Safeguard against undefined totalScore
+  console.log("Final score: " + totalScore)
 
   const handleSubmit = async () => {
+    console.log("Attempting to submit: Name: " + name + " Score: " + totalScore)
     try {
       const response = await fetch('https://cs.boisestate.edu/~scutchin/cs402/project/saveson.php?user=team5Leaderboards', {
         method: 'POST',
@@ -377,7 +381,7 @@ const ResultsScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <Text>Total Score: {totalScore}</Text>
+      <Text>Total Score: {String(totalScore)}</Text>
       <TextInput
         style={styles.input}
         placeholder="Enter your name"
