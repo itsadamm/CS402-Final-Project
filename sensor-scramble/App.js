@@ -123,12 +123,13 @@ const CameraScreen = ({navigation, route}) => {
   const SCREEN_HEIGHT = useWindowDimensions().height;
   const [type, setType] = useState(CameraType.back);
   const [permission, requestPermission] = Camera.useCameraPermissions();
-  var scam = {width: SCREEN_WIDTH, height: SCREEN_WIDTH*(4/3)}
   const { targetAngle } = route.params;
   const [orientationData, setOrientationData] = useState({ alpha: 0 });
   const [referenceAngle, setReferenceAngle] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const cameraRef = useRef(null);
+  
+  var scam = {width: SCREEN_WIDTH, height: SCREEN_WIDTH*(4/3)}
 
   useEffect(() => {
     if (permission && permission.granted) {
@@ -216,6 +217,8 @@ const onPictureSaved = (photo, actualAngle) => {
         <TouchableOpacity style={styles.button} onPress={toggleCameraType}>
           <Text style={styles.text}>Flip Camera</Text>
         </TouchableOpacity>
+        <View style={[styles.overlayLine, {transform: [{rotate: String(calculateAdjustedAngle(orientationData.alpha)+90) + "deg"}]}]}/>
+        <Text>Current Angle: {calculateAdjustedAngle(orientationData.alpha)}</Text>
         <View
           style={{
           alignSelf: 'center',
@@ -420,6 +423,14 @@ const AboutScreen = ({navigation, route}) => {
 };
 
 const styles = StyleSheet.create({
+  overlayLine: {
+    width: 50,
+    height: 5,
+    backgroundColor: "red",
+    borderWidth: 5,
+    borderColor: "yellow",
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#fff',
