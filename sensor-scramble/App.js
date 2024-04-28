@@ -2,17 +2,22 @@ import * as React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, Platform, Image, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, Text, View, Button, Platform, Image, TouchableOpacity, TextInput, ScrollView, useCallback } from 'react-native';
 import { StackActions } from '@react-navigation/native';
 import { CommonActions } from '@react-navigation/native';
 import {useState, useEffect, useRef, list} from 'react';
 import { Camera, CameraType } from 'expo-camera';
 import { useWindowDimensions } from 'react-native';
 import { DeviceMotion } from 'expo-sensors';
+import * as SplashScreen from 'expo-splash-screen';
+import { useRootNavigationState } from 'expo-router'
 
 // Navigation docs here: https://reactnavigation.org/docs/getting-started/
 
 const Stack = createNativeStackNavigator();
+
+var loadURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/loadjson.php?user=teamfiveleaderboards";
+var saveURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/savejson.php?user=teamfiveleaderboards";
 
 export default function App() {
   return (
@@ -37,6 +42,7 @@ export default function App() {
 }
 
 const HomeScreen = ({navigation}) => {
+
   return (
     <View>
       <Button
@@ -357,20 +363,46 @@ const RoundEndScreen = ({navigation, route}) => {
 const ResultsScreen = ({ navigation, route }) => {
   const [name, setName] = useState('');
   const totalScore = route.params.totalScore || 0; // Safeguard against undefined totalScore
-  console.log("Final score: " + totalScore)
+  const [leaderboard, setLeaderboard] = useState([]); // Have to laod leaderboard to append
 
+  console.log("Final score: " + totalScore)
+  
+  useEffect(() => {
+    // Load current leaderboard
+    fetchLeaderboard(loadURL, setLeaderboard);
+  }, []);
+  
   const handleSubmit = async () => {
     console.log("Attempting to submit: Name: " + name + " Score: " + totalScore)
+
     try {
-      const response = await fetch('https://cs.boisestate.edu/~scutchin/cs402/project/saveson.php?user=team5Leaderboards', {
+      // Append current entry
+      // (This took so long to get working properly for some reason, using the same method from the hw
+      // wasn't working for me, but this does work.)
+      const entry = [{name: name, score: totalScore}];
+      const newLeaderboard = [...leaderboard, ...entry]; 
+  
+      console.log(newLeaderboard)
+
+      // Save leaderboard back
+      response = await fetch(saveURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: name, score: totalScore }),
+        body: JSON.stringify(newLeaderboard),
       });
       if (response.ok) {
-        navigation.navigate('Leaderboard');
+        // Set previous page to home
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 1,
+            routes: [
+              { name: 'Home' },
+              { name: 'Leaderboard' },
+            ],
+          })
+        );
       } else {
         console.error('Failed to submit score');
       }
@@ -396,28 +428,72 @@ const ResultsScreen = ({ navigation, route }) => {
   );
 };
 
-const LeaderboardScreen = () => {
+// Function to fetch leaderboard from a url and set it using the given setter. 
+async function fetchLeaderboard(aUrl, aSetList) {
+  try {
+    const response = await fetch(aUrl);
+    const data = await response.json();
+
+    const aList = [] 
+
+    data.forEach((k) => {
+      aList.push(k);
+    })
+
+    const newList = aList.map((k) => {return k})
+    aSetList(newList);
+
+  } catch (error) {
+    console.error('Failed to fetch leaderboard:', error);
+  }
+}
+
+const LeaderboardScreen = ({ navigation, route }) => {
   const [leaderboard, setLeaderboard] = useState([]);
 
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        const response = await fetch('https://cs.boisestate.edu/~scutchin/cs402/project/loadjson.php?user=team5Leaderboards');
-        const data = await response.json();
-        setLeaderboard(data);
-      } catch (error) {
-        console.error('Failed to fetch leaderboard:', error);
-      }
-    };
+  // Function just for list debug
+  async function loadDefault() {
+    var response = await fetch(saveURL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([{"name": "dale", "score": 111}, {"name": "john", "score": 222}])
+      });
+  }
+  
+  function loadData() {
+    fetchLeaderboard(loadURL, setLeaderboard);
+    index = 0
+    newList = [];
+  
+    leaderboard.forEach((e, index) => {
+      newList.push(
+        <Text style={styles.leaderboard} key={index}> {index + 1} | {e.name} | {e.score} pts</Text>
+      )
+    })
+    return newList
+  }
 
-    fetchLeaderboard();
-  }, []);
-
+  // Constanctly calling loadData() to generatate the list is DEFINITELY not the actual way
+  // to handle this, but using an onReady() would cause the list to not render on first open,
+  // and only on refresh, so this "works" but is slow and extremely ineffient. I spent a good
+  // few hours trying to figure it out with different ready functions, loading screens, etc.
+  // and coudn't end up figuring it out. 
   return (
-    <ScrollView>
-      {leaderboard.map((entry, index) => (
-        <Text key={index}>{index + 1} | {entry.name} | {entry.score} pts</Text>
-      ))}
+    <ScrollView> 
+      {loadData()}
+      <Button title="DEBUG BACK TO SUBMIT PAGE" onPress={() => {navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [
+              { name: 'ResultsScreen', params: {totalScore: 100} },
+            ],
+          })
+        );}}/>
+      <Button
+        title='DEBUG: Load default list'
+        onPress={() => loadDefault()}/>
     </ScrollView>
   );
 };
@@ -427,6 +503,10 @@ const AboutScreen = ({navigation, route}) => {
 };
 
 const styles = StyleSheet.create({
+  leaderboard: {
+    fontSize: 20,
+  },
+
   overlayLine: {
     width: 50,
     height: 5,
