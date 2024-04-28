@@ -210,7 +210,7 @@ const onPictureSaved = (photo, actualAngle) => {
     );
 };
   
-  var cam = <Camera style={[styles.camera, scam]} type={type}ref={cameraRef}
+  var cam = <Camera style={[scam]} type={type}ref={cameraRef}
   >
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button} onPress={toggleCameraType}>
@@ -420,12 +420,6 @@ const AboutScreen = ({navigation, route}) => {
 };
 
 const styles = StyleSheet.create({
-  camera: {
-    flex: 1,
-    width: 1000,
-    height: 1000,
-  },
-
   container: {
     flex: 1,
     backgroundColor: '#fff',
