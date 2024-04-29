@@ -2,7 +2,7 @@ import * as React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, Platform, Image, TouchableOpacity, TextInput, ScrollView, useCallback } from 'react-native';
+import { StyleSheet, Text, View, Button, Platform, Image, TouchableOpacity, TextInput, ScrollView, useCallback, ImageBackground } from 'react-native';
 import { StackActions } from '@react-navigation/native';
 import { CommonActions } from '@react-navigation/native';
 import {useState, useEffect, useRef, list} from 'react';
@@ -29,7 +29,7 @@ export default function App() {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{title: 'Home Page'}}
+          options={{title: 'Home Page', headerShown: false}}
         />
         <Stack.Screen name="NewGame" component={NewGameScreen} />
         <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
@@ -46,33 +46,45 @@ export default function App() {
 }
 
 const HomeScreen = ({navigation}) => {
-
   return (
-    <View>
-      <Button
-        title="New Game"
-        onPress={() =>
-          navigation.navigate('NewGame')
-        }
-      />
-      <Button
-        title="Leaderboard"
-        onPress={() =>
-          navigation.navigate('Leaderboard')
-        }
-      />
-      <Button
-        title="About"
-        onPress={() =>
-          navigation.navigate('About')
-        }
-      />
-      <Button
-        title="Accelerometer Game"
-        onPress={() =>
-          navigation.navigate('AccelerometerGameScreen')
-        }
-      />
+    <View style={styles.container}>
+      <ImageBackground source={require('./assets/paper2.png')} resizeMode="cover" style={styles.image}>
+        <View style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', flex: 1}}>
+          <Image style={{width: 500, height: 200, resizeMode: "center"}} source={require('./assets/sensorscramblelogo.png')}/>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() =>
+              navigation.navigate('NewGame')
+            }
+          >
+            <Text style={styles.menuButtonText}>New Game</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() =>
+              navigation.navigate('Leaderboard')
+            }
+            >
+            <Text style={styles.menuButtonText}>Leaderboard</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() =>
+              navigation.navigate('About')
+            }
+            >
+            <Text style={styles.menuButtonText}>About</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() =>
+              navigation.navigate('AccelerometerGameScreen')
+            }
+            >
+            <Text style={styles.menuButtonText}>Accelerometer Game</Text>
+          </TouchableOpacity>
+        </View>
+      </ImageBackground>
     </View>
   );
 };
@@ -651,6 +663,31 @@ const AboutScreen = ({navigation, route}) => {
 };
 
 const styles = StyleSheet.create({
+  menuButton: {
+    alignItems: "center",
+    width: "60%",
+    height: "11%",
+    margin: 10,
+    backgroundColor: "salmon",
+    borderRadius: 30,
+    borderColor: "maroon",
+    borderWidth: 5
+  },
+
+  menuButtonText: {
+    textAlign: "center",
+    textAlignVertical: "center",
+    width: "100%",
+    height: "100%",
+    fontSize: 30
+  },
+
+  image: {
+    flex: 1,
+    justifyContent: 'center',
+    width: "100%",
+  },
+
   timer: {
     position: "absolute",
     top: 0,
