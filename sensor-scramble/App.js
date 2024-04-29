@@ -76,14 +76,18 @@ const HomeScreen = ({navigation}) => {
 };
 
 const AccelerometerGameScreen = ({navigation, route}) => {
+  const SCREEN_WIDTH = useWindowDimensions().width;
+  const SCREEN_HEIGHT = useWindowDimensions().height;
   const [xAcc, setXAcc] = useState(0.0)
   const [yAcc, setYAcc] = useState(0.0)
   const [zAcc, setZAcc] = useState(0.0)
-  const [xPos, setXPos] = useState(0.0)
-  const [yPos, setYPos] = useState(0.0)
+  const [xPos, setXPos] = useState(-50.0)
+  const [yPos, setYPos] = useState(50.0)
 
   const MOTION_SCALE = 1; // Multiplier for moving the ball
-  const DRAG = 0.2 // Subtracted from acceleration every timestep
+  const DRAG = 0.2; // Subtracted from acceleration every timestep
+  const BALL_WIDTH = 70; // Width of ball, used for right and bottom wall calculations
+  const ABSORPTION = 2; // How much to divide acceleration by when bouncing off a wall
 
   const [accelSubscription, setAccelSubscription] = useState(null);
   
@@ -105,10 +109,29 @@ const AccelerometerGameScreen = ({navigation, route}) => {
 
   // Update position on acceleration change
   useEffect(() => {
-    setXPos(xPos+xAcc);
+    setXPos(xPos-xAcc);
+    if(xPos <= 0) {
+      setXPos(1);
+      setXAcc(0);
+      setXAcc(-xAcc / ABSORPTION);
+    }
+    if (xPos >= SCREEN_WIDTH-BALL_WIDTH) {
+      setXPos(SCREEN_WIDTH-BALL_WIDTH-1);
+      setXAcc(-xAcc / ABSORPTION);
+    }
   },[xAcc]);
+
   useEffect(() => {
     setYPos(yPos+yAcc);
+    if(yPos <= 0) {
+      setYPos(1);
+      setYAcc(0);
+      setYAcc(-yAcc / ABSORPTION);
+    }
+    if (yPos >= SCREEN_HEIGHT-BALL_WIDTH) {
+      setYPos(SCREEN_HEIGHT-BALL_WIDTH-1);
+      setYAcc(-yAcc / ABSORPTION);
+    }
   },[yAcc]);
 
   const _unsubscribeSensors = () => {
@@ -132,8 +155,8 @@ const AccelerometerGameScreen = ({navigation, route}) => {
         <Text>xPos: {xPos}</Text>
         <Text>yPos: {yPos}</Text>
     </View>
-    <View style={styles.marbleField}>
-      <View style={[styles.marble, {transform: [{translateX: -xPos*MOTION_SCALE}, {translateY: yPos*MOTION_SCALE}]}]}/>
+    <View style={[{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT}, styles.marbleField]}>
+      <View style={[styles.marble, {transform: [{translateX: xPos*MOTION_SCALE}, {translateY: yPos*MOTION_SCALE}]}]}/>
     </View>
   </View> 
 };
@@ -575,12 +598,11 @@ const AboutScreen = ({navigation, route}) => {
 
 const styles = StyleSheet.create({
   marbleField: {
-    width: 300,
-    height: 500,
-    borderColor: "black",
+    borderColor: "orange",
     borderWidth: 10,
     alignSelf: "center",
-    top: 50,
+    top:0,
+    position: "absolute"
   },
 
   marble: {
