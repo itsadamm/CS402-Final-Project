@@ -83,7 +83,7 @@ const AccelerometerGameScreen = ({navigation, route}) => {
   const [yPos, setYPos] = useState(0.0)
 
   const MOTION_SCALE = 1; // Multiplier for moving the ball
-  const DRAG = 0.3 // Subtracted from acceleration every timestep
+  const DRAG = 0.2 // Subtracted from acceleration every timestep
 
   const [accelSubscription, setAccelSubscription] = useState(null);
   
@@ -203,7 +203,6 @@ const CameraScreen = ({navigation, route}) => {
   const { targetAngle } = route.params;
   const [orientationData, setOrientationData] = useState({ alpha: 0 });
   const [referenceAngle, setReferenceAngle] = useState(null);
-  const [rotSubscription, setRotSubscription] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const cameraRef = useRef(null);
   
@@ -212,30 +211,20 @@ const CameraScreen = ({navigation, route}) => {
   useEffect(() => {
     if (permission && permission.granted) {
         setIsReady(true);
-        _subscribeSensors()
-        
-        return () => _unsubscribeSensors();
-      } else if (permission && !permission.granted) {
+        DeviceMotion.setUpdateInterval(500);
+        const subscription = DeviceMotion.addListener(motionData => {
+            if (motionData.rotation) {
+                const alphaDegrees = (motionData.rotation.alpha * 180 / Math.PI + 360) % 360;
+                setOrientationData({ alpha: alphaDegrees });
+                console.log(`Alpha Rotation: ${alphaDegrees} degrees`);
+            }
+        });
+
+        return () => subscription.remove();
+    } else if (permission && !permission.granted) {
         requestPermission();
-      }
-    }, [permission]);
-    
-    const _subscribeSensors = () => {
-      // Device rotation subscription
-      DeviceMotion.setUpdateInterval(100);
-      setRotSubscription(DeviceMotion.addListener(motionData => {
-        if (motionData.rotation) {
-          const alphaDegrees = (motionData.rotation.alpha * 180 / Math.PI + 360) % 360;
-          setOrientationData({ alpha: alphaDegrees });
-          //console.log(`Alpha Rotation: ${alphaDegrees} degrees`);
-        }
-      })) 
-  }
-  
-  const _unsubscribeSensors = () => {
-    rotSubscription && rotSubscription.remove();
-    setRotSubscription(null);
-  }
+    }
+}, [permission]);
 
 const setCustomReference = () => {
   setReferenceAngle(orientationData.alpha);
