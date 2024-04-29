@@ -600,7 +600,9 @@ async function fetchLeaderboard(aUrl, aSetList) {
       aList.push(k);
     })
 
-    const newList = aList.map((k) => {return k})
+    // Sort leaderboard descending
+    const newList = [...aList].sort((a, b) => b.score - a.score);
+
     aSetList(newList);
 
   } catch (error) {
@@ -629,7 +631,11 @@ const LeaderboardScreen = ({ navigation, route }) => {
   
     leaderboard.forEach((e, index) => {
       newList.push(
-        <Text style={styles.leaderboard} key={index}> {index + 1} | {e.name} | {e.score} pts</Text>
+        <View style={styles.leaderboardEntry} key={index}>
+           <Text style={styles.leaderboardText}>{index + 1}</Text>
+           <Text style={styles.leaderboardText}>{e.name}</Text>
+           <Text style={styles.leaderboardText}>{e.score} pts</Text>
+        </View>
       )
     })
     return newList
@@ -641,20 +647,22 @@ const LeaderboardScreen = ({ navigation, route }) => {
   // few hours trying to figure it out with different ready functions, loading screens, etc.
   // and coudn't end up figuring it out. 
   return (
-    <ScrollView> 
+    <ImageBackground source={require('./assets/paper8.png')} resizeMode="cover" style={styles.image}>
+    <Button title="DEBUG BACK TO SUBMIT PAGE" onPress={() => {navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [
+            { name: 'ResultsScreen', params: {totalScore: 100} },
+          ],
+        })
+      );}}/>
+    <Button
+      title='DEBUG: Load default list'
+      onPress={() => loadDefault()}/>
+    <ScrollView style={styles.leaderboardContainer}> 
       {loadData()}
-      <Button title="DEBUG BACK TO SUBMIT PAGE" onPress={() => {navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [
-              { name: 'ResultsScreen', params: {totalScore: 100} },
-            ],
-          })
-        );}}/>
-      <Button
-        title='DEBUG: Load default list'
-        onPress={() => loadDefault()}/>
     </ScrollView>
+  </ImageBackground>
   );
 };
 
@@ -663,6 +671,34 @@ const AboutScreen = ({navigation, route}) => {
 };
 
 const styles = StyleSheet.create({
+  leaderboardContainer: {
+    padding: 15,
+    width: "100%",
+    alignSelf: "center",
+  },
+
+  leaderboardEntry: {
+    alignItems: "center",
+    alignSelf: "center",
+    width: "90%",
+    margin: 10,
+    backgroundColor: "skyblue",
+    borderRadius: 5,
+    borderColor: "steelblue",
+    borderWidth: 5,
+    flex: 1,
+    justifyContent: 'space-evenly',
+    flexDirection: "row"
+  },
+
+  leaderboardText: {
+    textAlign: "center",
+    textAlignVertical: "center",
+    flex: 1,
+    textAlignVertical: "center",
+    fontSize: 25
+  },
+
   menuButton: {
     alignItems: "center",
     width: "60%",
