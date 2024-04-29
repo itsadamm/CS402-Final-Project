@@ -9,6 +9,7 @@ import {useState, useEffect, useRef, list} from 'react';
 import { Camera, CameraType } from 'expo-camera';
 import { useWindowDimensions } from 'react-native';
 import { DeviceMotion, Accelerometer } from 'expo-sensors';
+import { CountdownCircleTimer } from 'react-native-countdown-circle-timer'
 import * as SplashScreen from 'expo-splash-screen';
 import { useRootNavigationState } from 'expo-router'
 import { AccelerometerSensor } from 'expo-sensors/build/Accelerometer';
@@ -80,12 +81,12 @@ const AccelerometerGameScreen = ({navigation, route}) => {
   const SCREEN_HEIGHT = useWindowDimensions().height;
   const [xAcc, setXAcc] = useState(0.0)
   const [yAcc, setYAcc] = useState(0.0)
-  const [zAcc, setZAcc] = useState(0.0)
   const [xPos, setXPos] = useState(-50.0)
   const [yPos, setYPos] = useState(50.0)
 
   const [scoreZone, setScoreZone] = useState({x: 100, y: 100})
   const [totalScore, setTotalScore] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false) // Timer
 
   const MOTION_SCALE = 1; // Multiplier for moving the ball
   const DRAG = 0.1; // Subtracted from acceleration every timestep
@@ -93,6 +94,7 @@ const AccelerometerGameScreen = ({navigation, route}) => {
   const ABSORPTION = 2; // How much to divide acceleration by when bouncing off a wall
   const UPDATE_FREQ = 20; 
   const SCORE_ZONE_SIZE = 50;
+  const TIMER_DURAION = 30;
 
   const [accelSubscription, setAccelSubscription] = useState(null);
   
@@ -112,34 +114,41 @@ const AccelerometerGameScreen = ({navigation, route}) => {
 
   // Update position on acceleration change
   useEffect(() => {
-    // Update Location
-    setXPos(xPos-xAcc);
-    setYPos(yPos+yAcc);
-
-    // Colision checks
-    if(xPos <= 0) {
-      setXPos(1);
-      setXAcc(0);
-      setXAcc(-xAcc / ABSORPTION);
-    }
-    if (xPos >= SCREEN_WIDTH-BALL_WIDTH) {
-      setXPos(SCREEN_WIDTH-BALL_WIDTH-1);
-      setXAcc(-xAcc / ABSORPTION);
-    }
-    if(yPos <= 0) {
-      setYPos(1);
-      setYAcc(0);
-      setYAcc(-yAcc / ABSORPTION);
-    }
-    if (yPos >= SCREEN_HEIGHT-BALL_WIDTH) {
-      setYPos(SCREEN_HEIGHT-BALL_WIDTH-1);
-      setYAcc(-yAcc / ABSORPTION);
-    }
-
-    // Score Checks
-    if (Math.abs(xPos - scoreZone.x) < SCORE_ZONE_SIZE && Math.abs(yPos - scoreZone.y) < SCORE_ZONE_SIZE) {
-      setTotalScore(totalScore => totalScore + 100)
-      respawnScoreZone()
+    if (isPlaying) {
+      // Update Location
+      setXPos(xPos-xAcc);
+      setYPos(yPos+yAcc);
+  
+      // Colision checks
+      if(xPos <= 0) {
+        setXPos(1);
+        setXAcc(0);
+        setXAcc(-xAcc / ABSORPTION);
+      }
+      if (xPos >= SCREEN_WIDTH-BALL_WIDTH) {
+        setXPos(SCREEN_WIDTH-BALL_WIDTH-1);
+        setXAcc(-xAcc / ABSORPTION);
+      }
+      if(yPos <= 0) {
+        setYPos(1);
+        setYAcc(0);
+        setYAcc(-yAcc / ABSORPTION);
+      }
+      if (yPos >= SCREEN_HEIGHT-BALL_WIDTH) {
+        setYPos(SCREEN_HEIGHT-BALL_WIDTH-1);
+        setYAcc(-yAcc / ABSORPTION);
+      }
+  
+      // Score Checks
+      if (Math.abs(xPos - scoreZone.x) < SCORE_ZONE_SIZE && Math.abs(yPos - scoreZone.y) < SCORE_ZONE_SIZE) {
+        setTotalScore(totalScore => totalScore + 100)
+        respawnScoreZone()
+      }
+    } else {
+      setXPos(30)
+      setYPos(30)
+      setXAcc(0)
+      setYAcc(0)
     }
   },[xAcc]);
 
@@ -154,6 +163,17 @@ const AccelerometerGameScreen = ({navigation, route}) => {
     setAccelSubscription(null);
   }
 
+  const handleNextRound = () => {
+    setIsPlaying(false)
+    console.log("Round ended! Going home")
+    console.log("Score: " + totalScore)
+    navigation.navigate('Home')
+  }
+
+  const startGame = () => {
+    setIsPlaying(true)
+  }
+
   return <View>
     <View style={[{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT}, styles.marbleField]}>
       <View style={[styles.marble, {transform: [{translateX: xPos*MOTION_SCALE}, {translateY: yPos*MOTION_SCALE}]}]}/>
@@ -163,10 +183,28 @@ const AccelerometerGameScreen = ({navigation, route}) => {
         <Text>Current Accelerometer:</Text>
         <Text>x: {xAcc}</Text>
         <Text>y: {yAcc}</Text>
-        <Text>z: {zAcc}</Text>
         <Text>xPos: {xPos}</Text>
         <Text>yPos: {yPos}</Text>
         <Text>Total Score: {totalScore}</Text>
+    </View>
+    <TouchableOpacity style={[styles.startGame, {opacity: !isPlaying ? 1 : 0}]} onPress={startGame}>
+      <Text style={{fontSize: 30, width: 200, alignSelf: "center", left: 18, top: 20}}>Start Game!</Text>
+    </TouchableOpacity>
+    <Text style={{fontSize: 30, position: "absolute", width: 300, padding: 20}}>Score: {totalScore}</Text>
+    <View style={styles.timer}>
+      <CountdownCircleTimer
+        size={100}
+        isPlaying={isPlaying}
+        duration={TIMER_DURAION}
+        colors={['#004777', '#F7B801', '#A30000', '#A30000']}
+        colorsTime={[7, 5, 2, 0]}
+        onComplete={() => {
+          handleNextRound()
+          return { shouldRepeat: true }
+        }}
+      >
+      {({ remainingTime }) => <Text style={styles.timerText}>{remainingTime}</Text>}
+      </CountdownCircleTimer>
     </View>
   </View> 
 };
@@ -607,6 +645,28 @@ const AboutScreen = ({navigation, route}) => {
 };
 
 const styles = StyleSheet.create({
+  timer: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    padding:15
+  },
+
+  timerText: {
+    fontSize: 20
+  },
+
+  startGame: {
+    alignSelf: "center",
+    alignContent: "center",
+    alignItems: "center",
+    width: 200,
+    height: 90,
+    backgroundColor: "lightblue",
+    top: "100%",
+    borderRadius: 20,
+  },
+
   marbleField: {
     borderColor: "darkorange",
     borderWidth: 10,
@@ -637,10 +697,11 @@ const styles = StyleSheet.create({
   },
 
   infoPanel: {
+    top: 50,
     margin: 10,
     width: 250,
     backgroundColor: "white",
-    opacity: 0.5,
+    opacity: 0.3,
     borderColor: "slate",
     borderWidth: 5,
     borderRadius: 10,
