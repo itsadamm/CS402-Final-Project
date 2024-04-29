@@ -84,22 +84,25 @@ const AccelerometerGameScreen = ({navigation, route}) => {
   const [xPos, setXPos] = useState(-50.0)
   const [yPos, setYPos] = useState(50.0)
 
+  const [scoreZone, setScoreZone] = useState({x: 100, y: 100})
+  const [totalScore, setTotalScore] = useState(0)
+
   const MOTION_SCALE = 1; // Multiplier for moving the ball
-  const DRAG = 0.2; // Subtracted from acceleration every timestep
+  const DRAG = 0.1; // Subtracted from acceleration every timestep
   const BALL_WIDTH = 70; // Width of ball, used for right and bottom wall calculations
   const ABSORPTION = 2; // How much to divide acceleration by when bouncing off a wall
+  const UPDATE_FREQ = 20; 
+  const SCORE_ZONE_SIZE = 50;
 
   const [accelSubscription, setAccelSubscription] = useState(null);
   
   useEffect(() => {
-      Accelerometer.setUpdateInterval(50); // Only have to update once a second since just looking at phone orientation
+      Accelerometer.setUpdateInterval(UPDATE_FREQ); // Only have to update once a second since just looking at phone orientation
       _subscribeSensors()
       return () => _unsubscribeSensors();
     }, []);
 
     const _subscribeSensors = () => {      
-      console.log("subing")
-
       // Accellerometer subscription
       setAccelSubscription(Accelerometer.addListener(accelData => {
         setXAcc(xAcc => xAcc + accelData.x + (Math.sign(xAcc)*-DRAG))
@@ -109,7 +112,11 @@ const AccelerometerGameScreen = ({navigation, route}) => {
 
   // Update position on acceleration change
   useEffect(() => {
+    // Update Location
     setXPos(xPos-xAcc);
+    setYPos(yPos+yAcc);
+
+    // Colision checks
     if(xPos <= 0) {
       setXPos(1);
       setXAcc(0);
@@ -119,10 +126,6 @@ const AccelerometerGameScreen = ({navigation, route}) => {
       setXPos(SCREEN_WIDTH-BALL_WIDTH-1);
       setXAcc(-xAcc / ABSORPTION);
     }
-  },[xAcc]);
-
-  useEffect(() => {
-    setYPos(yPos+yAcc);
     if(yPos <= 0) {
       setYPos(1);
       setYAcc(0);
@@ -132,21 +135,30 @@ const AccelerometerGameScreen = ({navigation, route}) => {
       setYPos(SCREEN_HEIGHT-BALL_WIDTH-1);
       setYAcc(-yAcc / ABSORPTION);
     }
-  },[yAcc]);
+
+    // Score Checks
+    if (Math.abs(xPos - scoreZone.x) < SCORE_ZONE_SIZE && Math.abs(yPos - scoreZone.y) < SCORE_ZONE_SIZE) {
+      setTotalScore(totalScore => totalScore + 100)
+      respawnScoreZone()
+    }
+  },[xAcc]);
+
+  const respawnScoreZone = () => {
+    let zoneX = Math.floor(Math.random() * (SCREEN_WIDTH - 80 + 1));
+    let zoneY = Math.floor(Math.random() * (SCREEN_HEIGHT - 80 + 1));
+    setScoreZone({x: zoneX, y: zoneY})
+  }
 
   const _unsubscribeSensors = () => {
     Accelerometer.removeAllListeners()
     setAccelSubscription(null);
   }
 
-  function updateBallPos(accelData) {
-    let aaaa = xAcc
-    print(xAcc)
-    setXPos(xPos => xPos+xAcc);
-    setYPos(yPos => yPos+accelData.y);
-  }
-
   return <View>
+    <View style={[{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT}, styles.marbleField]}>
+      <View style={[styles.marble, {transform: [{translateX: xPos*MOTION_SCALE}, {translateY: yPos*MOTION_SCALE}]}]}/>
+      <View style={[styles.scoreZone, {transform: [{translateX: scoreZone.x}, {translateY: scoreZone.y-SCORE_ZONE_SIZE}]}]}/>
+    </View>
     <View style={styles.infoPanel}>
         <Text>Current Accelerometer:</Text>
         <Text>x: {xAcc}</Text>
@@ -154,9 +166,7 @@ const AccelerometerGameScreen = ({navigation, route}) => {
         <Text>z: {zAcc}</Text>
         <Text>xPos: {xPos}</Text>
         <Text>yPos: {yPos}</Text>
-    </View>
-    <View style={[{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT}, styles.marbleField]}>
-      <View style={[styles.marble, {transform: [{translateX: xPos*MOTION_SCALE}, {translateY: yPos*MOTION_SCALE}]}]}/>
+        <Text>Total Score: {totalScore}</Text>
     </View>
   </View> 
 };
@@ -598,11 +608,12 @@ const AboutScreen = ({navigation, route}) => {
 
 const styles = StyleSheet.create({
   marbleField: {
-    borderColor: "orange",
+    borderColor: "darkorange",
     borderWidth: 10,
     alignSelf: "center",
     top:0,
-    position: "absolute"
+    position: "absolute",
+    backgroundColor: "cornsilk",
   },
 
   marble: {
@@ -613,8 +624,26 @@ const styles = StyleSheet.create({
     backgroundColor: "red",
   },
 
+  scoreZone: {
+    width: 50,
+    height: 50,
+    borderRadius: 50,
+    color: "yellow",
+    backgroundColor: "gold",
+  },
+
   leaderboard: {
     fontSize: 20,
+  },
+
+  infoPanel: {
+    margin: 10,
+    width: 250,
+    backgroundColor: "white",
+    opacity: 0.5,
+    borderColor: "slate",
+    borderWidth: 5,
+    borderRadius: 10,
   },
 
   overlayLine: {
