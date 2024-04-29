@@ -10,6 +10,7 @@ import { Camera, CameraType } from 'expo-camera';
 import { useWindowDimensions } from 'react-native';
 import { DeviceMotion, Accelerometer } from 'expo-sensors';
 import { CountdownCircleTimer } from 'react-native-countdown-circle-timer'
+import * as Haptics from 'expo-haptics';
 import * as SplashScreen from 'expo-splash-screen';
 import { useRootNavigationState } from 'expo-router'
 import { AccelerometerSensor } from 'expo-sensors/build/Accelerometer';
@@ -124,25 +125,30 @@ const AccelerometerGameScreen = ({navigation, route}) => {
         setXPos(1);
         setXAcc(0);
         setXAcc(-xAcc / ABSORPTION);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
       }
       if (xPos >= SCREEN_WIDTH-BALL_WIDTH) {
         setXPos(SCREEN_WIDTH-BALL_WIDTH-1);
         setXAcc(-xAcc / ABSORPTION);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
       }
       if(yPos <= 0) {
         setYPos(1);
         setYAcc(0);
         setYAcc(-yAcc / ABSORPTION);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
       }
       if (yPos >= SCREEN_HEIGHT-BALL_WIDTH) {
         setYPos(SCREEN_HEIGHT-BALL_WIDTH-1);
         setYAcc(-yAcc / ABSORPTION);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
       }
   
       // Score Checks
       if (Math.abs(xPos - scoreZone.x) < SCORE_ZONE_SIZE && Math.abs(yPos - scoreZone.y) < SCORE_ZONE_SIZE) {
         setTotalScore(totalScore => totalScore + 100)
         respawnScoreZone()
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
       }
     } else {
       setXPos(30)
