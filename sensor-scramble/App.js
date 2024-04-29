@@ -19,8 +19,7 @@ import { AccelerometerSensor } from 'expo-sensors/build/Accelerometer';
 
 const Stack = createNativeStackNavigator();
 
-var loadURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/loadjson.php?user=teamfiveleaderboards";
-var saveURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/savejson.php?user=teamfiveleaderboards";
+const cameraGameURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/loadjson.php?user=teamfiveleaderboards";
 
 export default function App() {
   return (
@@ -57,10 +56,10 @@ const HomeScreen = ({navigation}) => {
               navigation.navigate('NewGame')
             }
           >
-            <Text style={styles.menuButtonText}>New Game</Text>
+            <Text style={styles.menuButtonText}>Camera Tilt Game</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.menuButton}
+            style={styles.menuButtonSmall}
             onPress={() =>
               navigation.navigate('Leaderboard')
             }
@@ -70,18 +69,26 @@ const HomeScreen = ({navigation}) => {
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() =>
-              navigation.navigate('About')
-            }
-            >
-            <Text style={styles.menuButtonText}>About</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={() =>
               navigation.navigate('AccelerometerGameScreen')
             }
             >
             <Text style={styles.menuButtonText}>Accelerometer Game</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButtonSmall}
+            onPress={() =>
+              navigation.navigate('Leaderboard', {remoteURL: cameraGameURL})
+            }
+            >
+            <Text style={styles.menuButtonText}>Leaderboard</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuButtonSmall}
+            onPress={() =>
+              navigation.navigate('About')
+            }
+            >
+            <Text style={styles.menuButtonText}>About</Text>
           </TouchableOpacity>
         </View>
       </ImageBackground>
@@ -529,7 +536,7 @@ const ResultsScreen = ({ navigation, route }) => {
   
   useEffect(() => {
     // Load current leaderboard
-    fetchLeaderboard(loadURL, setLeaderboard);
+    fetchLeaderboard(cameraGameURL, setLeaderboard);
   }, []);
   
   const handleSubmit = async () => {
@@ -545,7 +552,7 @@ const ResultsScreen = ({ navigation, route }) => {
       console.log(newLeaderboard)
 
       // Save leaderboard back
-      response = await fetch(saveURL, {
+      response = await fetch(cameraGameURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -559,7 +566,10 @@ const ResultsScreen = ({ navigation, route }) => {
             index: 1,
             routes: [
               { name: 'Home' },
-              { name: 'Leaderboard' },
+              {
+                name: 'Leaderboard',
+                params: {remoteURL: cameraGameURL}
+              },
             ],
           })
         );
@@ -612,10 +622,11 @@ async function fetchLeaderboard(aUrl, aSetList) {
 
 const LeaderboardScreen = ({ navigation, route }) => {
   const [leaderboard, setLeaderboard] = useState([]);
+  const remoteURL = cameraGameURL
 
   // Function just for list debug
   async function loadDefault() {
-    var response = await fetch(saveURL, {
+    var response = await fetch(remoteURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -625,7 +636,7 @@ const LeaderboardScreen = ({ navigation, route }) => {
   }
   
   function loadData() {
-    fetchLeaderboard(loadURL, setLeaderboard);
+    fetchLeaderboard(remoteURL, setLeaderboard);
     index = 0
     newList = [];
   
@@ -640,6 +651,8 @@ const LeaderboardScreen = ({ navigation, route }) => {
     })
     return newList
   }
+
+  //console.log(route.params)
 
   // Constanctly calling loadData() to generatate the list is DEFINITELY not the actual way
   // to handle this, but using an onReady() would cause the list to not render on first open,
@@ -707,6 +720,17 @@ const styles = StyleSheet.create({
     backgroundColor: "salmon",
     borderRadius: 30,
     borderColor: "maroon",
+    borderWidth: 5
+  },
+
+  menuButtonSmall: {
+    alignItems: "center",
+    width: "60%",
+    height: "6%",
+    margin: 10,
+    backgroundColor: "skyblue",
+    borderRadius: 30,
+    borderColor: "steelblue",
     borderWidth: 5
   },
 
