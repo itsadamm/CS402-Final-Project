@@ -8,9 +8,10 @@ import { CommonActions } from '@react-navigation/native';
 import {useState, useEffect, useRef, list} from 'react';
 import { Camera, CameraType } from 'expo-camera';
 import { useWindowDimensions } from 'react-native';
-import { DeviceMotion } from 'expo-sensors';
+import { DeviceMotion, Accelerometer } from 'expo-sensors';
 import * as SplashScreen from 'expo-splash-screen';
 import { useRootNavigationState } from 'expo-router'
+import { AccelerometerSensor } from 'expo-sensors/build/Accelerometer';
 
 // Navigation docs here: https://reactnavigation.org/docs/getting-started/
 
@@ -35,6 +36,7 @@ export default function App() {
         <Stack.Screen name="ResultsScreen" component={ResultsScreen} />
         <Stack.Screen name="CameraScreen" component={CameraScreen} />
         <Stack.Screen name="RoundEndScreen" component={RoundEndScreen} />
+        <Stack.Screen name="AccelerometerGameScreen" component={AccelerometerGameScreen} />
       </Stack.Navigator>
       <StatusBar style='auto'/>
     </NavigationContainer>
@@ -63,8 +65,77 @@ const HomeScreen = ({navigation}) => {
           navigation.navigate('About')
         }
       />
+      <Button
+        title="Accelerometer Game"
+        onPress={() =>
+          navigation.navigate('AccelerometerGameScreen')
+        }
+      />
     </View>
   );
+};
+
+const AccelerometerGameScreen = ({navigation, route}) => {
+  const [xAcc, setXAcc] = useState(0.0)
+  const [yAcc, setYAcc] = useState(0.0)
+  const [zAcc, setZAcc] = useState(0.0)
+  const [xPos, setXPos] = useState(0.0)
+  const [yPos, setYPos] = useState(0.0)
+
+  const MOTION_SCALE = 1; // Multiplier for moving the ball
+  const DRAG = 0.3 // Subtracted from acceleration every timestep
+
+  const [accelSubscription, setAccelSubscription] = useState(null);
+  
+  useEffect(() => {
+      Accelerometer.setUpdateInterval(50); // Only have to update once a second since just looking at phone orientation
+      _subscribeSensors()
+      return () => _unsubscribeSensors();
+    }, []);
+
+    const _subscribeSensors = () => {      
+      console.log("subing")
+
+      // Accellerometer subscription
+      setAccelSubscription(Accelerometer.addListener(accelData => {
+        setXAcc(xAcc => xAcc + accelData.x + (Math.sign(xAcc)*-DRAG))
+        setYAcc(yAcc => yAcc + accelData.y + (Math.sign(yAcc)*-DRAG))
+      }));
+  }
+
+  // Update position on acceleration change
+  useEffect(() => {
+    setXPos(xPos+xAcc);
+  },[xAcc]);
+  useEffect(() => {
+    setYPos(yPos+yAcc);
+  },[yAcc]);
+
+  const _unsubscribeSensors = () => {
+    Accelerometer.removeAllListeners()
+    setAccelSubscription(null);
+  }
+
+  function updateBallPos(accelData) {
+    let aaaa = xAcc
+    print(xAcc)
+    setXPos(xPos => xPos+xAcc);
+    setYPos(yPos => yPos+accelData.y);
+  }
+
+  return <View>
+    <View style={styles.infoPanel}>
+        <Text>Current Accelerometer:</Text>
+        <Text>x: {xAcc}</Text>
+        <Text>y: {yAcc}</Text>
+        <Text>z: {zAcc}</Text>
+        <Text>xPos: {xPos}</Text>
+        <Text>yPos: {yPos}</Text>
+    </View>
+    <View style={styles.marbleField}>
+      <View style={[styles.marble, {transform: [{translateX: -xPos*MOTION_SCALE}, {translateY: yPos*MOTION_SCALE}]}]}/>
+    </View>
+  </View> 
 };
 
 // Note: I'm using the CommonActions.reset to navigate to manually
@@ -132,6 +203,7 @@ const CameraScreen = ({navigation, route}) => {
   const { targetAngle } = route.params;
   const [orientationData, setOrientationData] = useState({ alpha: 0 });
   const [referenceAngle, setReferenceAngle] = useState(null);
+  const [rotSubscription, setRotSubscription] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const cameraRef = useRef(null);
   
@@ -140,20 +212,30 @@ const CameraScreen = ({navigation, route}) => {
   useEffect(() => {
     if (permission && permission.granted) {
         setIsReady(true);
-        DeviceMotion.setUpdateInterval(500);
-        const subscription = DeviceMotion.addListener(motionData => {
-            if (motionData.rotation) {
-                const alphaDegrees = (motionData.rotation.alpha * 180 / Math.PI + 360) % 360;
-                setOrientationData({ alpha: alphaDegrees });
-                console.log(`Alpha Rotation: ${alphaDegrees} degrees`);
-            }
-        });
-
-        return () => subscription.remove();
-    } else if (permission && !permission.granted) {
+        _subscribeSensors()
+        
+        return () => _unsubscribeSensors();
+      } else if (permission && !permission.granted) {
         requestPermission();
-    }
-}, [permission]);
+      }
+    }, [permission]);
+    
+    const _subscribeSensors = () => {
+      // Device rotation subscription
+      DeviceMotion.setUpdateInterval(100);
+      setRotSubscription(DeviceMotion.addListener(motionData => {
+        if (motionData.rotation) {
+          const alphaDegrees = (motionData.rotation.alpha * 180 / Math.PI + 360) % 360;
+          setOrientationData({ alpha: alphaDegrees });
+          //console.log(`Alpha Rotation: ${alphaDegrees} degrees`);
+        }
+      })) 
+  }
+  
+  const _unsubscribeSensors = () => {
+    rotSubscription && rotSubscription.remove();
+    setRotSubscription(null);
+  }
 
 const setCustomReference = () => {
   setReferenceAngle(orientationData.alpha);
@@ -503,6 +585,23 @@ const AboutScreen = ({navigation, route}) => {
 };
 
 const styles = StyleSheet.create({
+  marbleField: {
+    width: 300,
+    height: 500,
+    borderColor: "black",
+    borderWidth: 10,
+    alignSelf: "center",
+    top: 50,
+  },
+
+  marble: {
+    width: 50,
+    height: 50,
+    borderRadius: 50,
+    color: "red",
+    backgroundColor: "red",
+  },
+
   leaderboard: {
     fontSize: 20,
   },
