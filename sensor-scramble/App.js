@@ -19,7 +19,8 @@ import { AccelerometerSensor } from 'expo-sensors/build/Accelerometer';
 
 const Stack = createNativeStackNavigator();
 
-const cameraGameURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/loadjson.php?user=teamfiveleaderboards";
+var loadURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/loadjson.php?user=teamfiveleaderboards";
+var saveURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/savejson.php?user=teamfiveleaderboards";
 
 export default function App() {
   return (
@@ -77,7 +78,7 @@ const HomeScreen = ({navigation}) => {
           <TouchableOpacity
             style={styles.menuButtonSmall}
             onPress={() =>
-              navigation.navigate('Leaderboard', {remoteURL: cameraGameURL})
+              navigation.navigate('Leaderboard')
             }
             >
             <Text style={styles.menuButtonText}>Leaderboard</Text>
@@ -536,7 +537,7 @@ const ResultsScreen = ({ navigation, route }) => {
   
   useEffect(() => {
     // Load current leaderboard
-    fetchLeaderboard(cameraGameURL, setLeaderboard);
+    fetchLeaderboard(loadURL, setLeaderboard);
   }, []);
   
   const handleSubmit = async () => {
@@ -552,7 +553,7 @@ const ResultsScreen = ({ navigation, route }) => {
       console.log(newLeaderboard)
 
       // Save leaderboard back
-      response = await fetch(cameraGameURL, {
+      response = await fetch(saveURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -566,10 +567,7 @@ const ResultsScreen = ({ navigation, route }) => {
             index: 1,
             routes: [
               { name: 'Home' },
-              {
-                name: 'Leaderboard',
-                params: {remoteURL: cameraGameURL}
-              },
+              { name: 'Leaderboard' },
             ],
           })
         );
@@ -622,11 +620,10 @@ async function fetchLeaderboard(aUrl, aSetList) {
 
 const LeaderboardScreen = ({ navigation, route }) => {
   const [leaderboard, setLeaderboard] = useState([]);
-  const remoteURL = cameraGameURL
 
   // Function just for list debug
   async function loadDefault() {
-    var response = await fetch(remoteURL, {
+    var response = await fetch(saveURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -636,7 +633,7 @@ const LeaderboardScreen = ({ navigation, route }) => {
   }
   
   function loadData() {
-    fetchLeaderboard(remoteURL, setLeaderboard);
+    fetchLeaderboard(loadURL, setLeaderboard);
     index = 0
     newList = [];
   
@@ -651,8 +648,6 @@ const LeaderboardScreen = ({ navigation, route }) => {
     })
     return newList
   }
-
-  //console.log(route.params)
 
   // Constanctly calling loadData() to generatate the list is DEFINITELY not the actual way
   // to handle this, but using an onReady() would cause the list to not render on first open,
