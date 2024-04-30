@@ -58,7 +58,7 @@ const HomeScreen = ({navigation}) => {
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() =>
-              navigation.navigate('NewGame')
+              navigation.navigate('NewGame', {loadURL: cameraGameLoadURL, saveURL: cameraGameSaveURL})
             }
           >
             <Text style={styles.menuButtonText}>Camera Tilt Game</Text>
@@ -74,7 +74,7 @@ const HomeScreen = ({navigation}) => {
           <TouchableOpacity
             style={styles.menuButton}
             onPress={() =>
-              navigation.navigate('AccelerometerGameScreen')
+              navigation.navigate('AccelerometerGameScreen', {loadURL: marbleGameLoadURL, saveURL: marbleGameSaveURL})
             }
             >
             <Text style={styles.menuButtonText}>Accelerometer Game</Text>
@@ -119,7 +119,7 @@ const AccelerometerGameScreen = ({navigation, route}) => {
   const ABSORPTION = 2; // How much to divide acceleration by when bouncing off a wall
   const UPDATE_FREQ = 20; 
   const SCORE_ZONE_SIZE = 50;
-  const TIMER_DURAION = 30;
+  const TIMER_DURAION = 3;
 
   const [accelSubscription, setAccelSubscription] = useState(null);
   
@@ -206,7 +206,14 @@ const AccelerometerGameScreen = ({navigation, route}) => {
     setIsPlaying(false)
     console.log("Round ended! Going home")
     console.log("Score: " + totalScore)
-    navigation.navigate('Home')
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          { name: 'ResultsScreen', params: {loadURL: route.params.loadURL, saveURL: route.params.saveURL, totalScore: totalScore} },
+        ],
+      })
+    )
   }
 
   const startGame = () => {
@@ -271,7 +278,7 @@ const NewGameScreen = ({navigation, route}) => {
             routes: [
               {
                 name: 'RoundIntroScreen',
-                params: { roundNum: 1, totalScore: 0},
+                params: { roundNum: 1, totalScore: 0, loadURL: route.params.loadURL, saveURL: route.params.saveURL},
               },
             ],
           })
@@ -285,7 +292,7 @@ const RoundIntroScreen = ({navigation, route}) => {
   const [targetAngle, setTargetAngle] = React.useState(Math.floor(Math.random() * 361)); // Random angle from 0 to 360
   return <View>
     <Text>Round {route.params.roundNum} !</Text>
-    <Text>Your target value is...{targetAngle}° </Text>
+    <Text>Your target value is...{targetAngle}ï¿½ </Text>
     <Button
       title="Next"
       onPress={() =>
@@ -295,7 +302,7 @@ const RoundIntroScreen = ({navigation, route}) => {
             routes: [
               {
                 name: 'CameraScreen',
-                params: {roundNum: route.params.roundNum, targetAngle, totalScore: route.params.totalScore}
+                params: {roundNum: route.params.roundNum, targetAngle, totalScore: route.params.totalScore, loadURL: route.params.loadURL, saveURL: route.params.saveURL}
               },
             ],
           })
@@ -391,7 +398,8 @@ const onPictureSaved = (photo, actualAngle) => {
                         prevPhoto: photo,
                         actualAngle: actualAngle,
                         targetAngle: route.params.targetAngle,
-                        totalScore: route.params.totalScore
+                        totalScore: route.params.totalScore,
+                        loadURL: route.params.loadURL, saveURL: route.params.saveURL
                     },
                 },
             ],
@@ -473,20 +481,22 @@ const RoundEndScreen = ({navigation, route}) => {
       const nextRoundNum = Number(route.params.roundNum) + 1;
       navigation.navigate('RoundIntroScreen', {
         roundNum: nextRoundNum,
-        totalScore: totalScore  // Pass updated totalScore to next round
+        totalScore: totalScore,  // Pass updated totalScore to next round
+        loadURL: route.params.loadURL, saveURL: route.params.saveURL
       });
     };
     
   const handleFinalRoundEnd = () => {
       navigation.navigate('ResultsScreen', {
-          totalScore: totalScore  // Pass final totalScore to results screen
+          totalScore: totalScore,  // Pass final totalScore to results screen
+          loadURL: route.params.loadURL, saveURL: route.params.saveURL
       });
   };
 
   return (
     <View>
         <Image style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 4 / 3, alignSelf: "center" }} source={{ uri: route.params.prevPhoto.uri }} />
-        <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {String(score)}</Text>
+        <Text>You Got: Angle {actualAngle}ï¿½ - Target: {targetAngle}ï¿½ - Score: {String(score)}</Text>
         {route.params.roundNum < 3 ? (
             <Button title="Next Round" onPress={handleNextRound} />
         ) : (
@@ -534,7 +544,7 @@ const RoundEndScreen = ({navigation, route}) => {
 //   }
 //   return <View>
 //     <Image style={{width: SCREEN_WIDTH, height: SCREEN_WIDTH*4/3, alignSelf:"center"}} source={{uri: route.params.prevPhoto.uri,}} />
-//     <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {score}</Text>
+//     <Text>You Got: Angle {actualAngle}ï¿½ - Target: {targetAngle}ï¿½ - Score: {score}</Text>
 //     {nextButton}
 //   </View>;
 // };
@@ -550,7 +560,7 @@ const ResultsScreen = ({ navigation, route }) => {
   
   useEffect(() => {
     // Load current leaderboard
-    fetchLeaderboard(cameraGameLoadURL, setLeaderboard);
+    fetchLeaderboard(route.params.loadURL, setLeaderboard);
   }, []);
   
   const handleSubmit = async () => {
@@ -566,7 +576,7 @@ const ResultsScreen = ({ navigation, route }) => {
       console.log(newLeaderboard)
 
       // Save leaderboard back
-      response = await fetch(cameraGameSaveURL, {
+      response = await fetch(route.params.saveURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -581,7 +591,7 @@ const ResultsScreen = ({ navigation, route }) => {
             routes: [
               { name: 'Home' },
               { name: 'Leaderboard', 
-                params: {loadURL: cameraGameLoadURL, saveURL: cameraGameSaveURL}
+                params: {loadURL: route.params.loadURL, saveURL: route.params.saveURL}
               },
             ],
           })
