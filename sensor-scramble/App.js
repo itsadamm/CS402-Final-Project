@@ -19,8 +19,12 @@ import { AccelerometerSensor } from 'expo-sensors/build/Accelerometer';
 
 const Stack = createNativeStackNavigator();
 
-var loadURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/loadjson.php?user=teamfiveleaderboards";
-var saveURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/savejson.php?user=teamfiveleaderboards";
+var cameraGameLoadURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/loadjson.php?user=teamfiveleaderboards";
+var cameraGameSaveURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/savejson.php?user=teamfiveleaderboards";
+
+var marbleGameLoadURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/loadjson.php?user=teamfiveleaderboardstwo";
+var marbleGameSaveURL = "https://cs.boisestate.edu/~scutchin/cs402/codesnips/savejson.php?user=teamfiveleaderboardstwo";
+
 
 export default function App() {
   return (
@@ -62,7 +66,7 @@ const HomeScreen = ({navigation}) => {
           <TouchableOpacity
             style={styles.menuButtonSmall}
             onPress={() =>
-              navigation.navigate('Leaderboard')
+              navigation.navigate('Leaderboard', {loadURL: cameraGameLoadURL, saveURL: cameraGameSaveURL})
             }
             >
             <Text style={styles.menuButtonText}>Leaderboard</Text>
@@ -78,7 +82,7 @@ const HomeScreen = ({navigation}) => {
           <TouchableOpacity
             style={styles.menuButtonSmall}
             onPress={() =>
-              navigation.navigate('Leaderboard')
+              navigation.navigate('Leaderboard', {loadURL: marbleGameLoadURL, saveURL: marbleGameSaveURL})
             }
             >
             <Text style={styles.menuButtonText}>Leaderboard</Text>
@@ -128,6 +132,7 @@ const AccelerometerGameScreen = ({navigation, route}) => {
     const _subscribeSensors = () => {      
       // Accellerometer subscription
       setAccelSubscription(Accelerometer.addListener(accelData => {
+        console.log(accelData)
         setXAcc(xAcc => xAcc + accelData.x + (Math.sign(xAcc)*-DRAG))
         setYAcc(yAcc => yAcc + accelData.y + (Math.sign(yAcc)*-DRAG))
       }));
@@ -537,7 +542,7 @@ const ResultsScreen = ({ navigation, route }) => {
   
   useEffect(() => {
     // Load current leaderboard
-    fetchLeaderboard(loadURL, setLeaderboard);
+    fetchLeaderboard(cameraGameLoadURL, setLeaderboard);
   }, []);
   
   const handleSubmit = async () => {
@@ -553,7 +558,7 @@ const ResultsScreen = ({ navigation, route }) => {
       console.log(newLeaderboard)
 
       // Save leaderboard back
-      response = await fetch(saveURL, {
+      response = await fetch(cameraGameSaveURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -567,7 +572,9 @@ const ResultsScreen = ({ navigation, route }) => {
             index: 1,
             routes: [
               { name: 'Home' },
-              { name: 'Leaderboard' },
+              { name: 'Leaderboard', 
+                params: {loadURL: cameraGameLoadURL, saveURL: cameraGameSaveURL}
+              },
             ],
           })
         );
@@ -623,17 +630,18 @@ const LeaderboardScreen = ({ navigation, route }) => {
 
   // Function just for list debug
   async function loadDefault() {
-    var response = await fetch(saveURL, {
+      const ops = {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify([{"name": "dale", "score": 111}, {"name": "john", "score": 222}])
-      });
+      };
+      const response = await fetch(route.params.saveURL, ops);
+      console.log(response);
   }
+
   
   function loadData() {
-    fetchLeaderboard(loadURL, setLeaderboard);
+    fetchLeaderboard(route.params.loadURL, setLeaderboard);
     index = 0
     newList = [];
   
