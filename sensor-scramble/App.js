@@ -119,7 +119,7 @@ const AccelerometerGameScreen = ({navigation, route}) => {
   const ABSORPTION = 2; // How much to divide acceleration by when bouncing off a wall
   const UPDATE_FREQ = 20; 
   const SCORE_ZONE_SIZE = 50;
-  const TIMER_DURAION = 3;
+  const TIMER_DURAION = 30;
 
   const [accelSubscription, setAccelSubscription] = useState(null);
   
@@ -606,19 +606,25 @@ const ResultsScreen = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text>Total Score: {String(totalScore)}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your name"
-        value={name}
-        onChangeText={setName}
-      />
-      <Button
-        title="Submit and view Leaderboard"
-        onPress={handleSubmit}
-      />
-    </View>
+    <ImageBackground source={require('./assets/paper2.png')} resizeMode="cover" style={styles.image}>
+      <View style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', flex: 1}}>
+
+      <View style={styles.menuButton}>
+          <Text style={styles.menuButtonText}>Score: {route.params.totalScore}pts!</Text>
+        </View>
+        <View style={styles.menuButtonSmallStatic}>
+          <TextInput
+            style={styles.menuButtonText}
+            placeholder="Enter your name"
+            value={name}
+            onChangeText={setName}
+            />
+        </View>
+        <TouchableOpacity style={styles.menuButtonSmallStatic} onPress={handleSubmit}>
+          <Text style={styles.menuButtonText}>Submit Score</Text>
+        </TouchableOpacity>
+      </View>
+    </ImageBackground>
   );
 };
 
@@ -726,6 +732,38 @@ const styles = StyleSheet.create({
     flexDirection: "row"
   },
 
+  resultsNameEntry: {
+    alignItems: "center",
+    alignSelf: "center",
+    height: 30,
+    width: "90%",
+    margin: 10,
+    backgroundColor: "skyblue",
+    borderRadius: 5,
+    borderColor: "steelblue",
+    borderWidth: 5,
+    flex: 1,
+    justifyContent: 'space-evenly',
+    flexDirection: "row"
+  },
+
+  resultsSubmit: {
+    alignItems: "center",
+    alignSelf: "center",
+    height: 30,
+    width: "90%",
+    margin: 10,
+    backgroundColor: "skyblue",
+    borderRadius: 5,
+    borderColor: "steelblue",
+    borderWidth: 5,
+    flex: 1,
+    justifyContent: 'space-evenly',
+    flexDirection: "row"
+  },
+
+
+
   leaderboardText: {
     textAlign: "center",
     textAlignVertical: "center",
@@ -749,6 +787,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "60%",
     height: "6%",
+    margin: 10,
+    backgroundColor: "skyblue",
+    borderRadius: 30,
+    borderColor: "steelblue",
+    borderWidth: 5
+  },
+
+  menuButtonSmallStatic: {
+    alignItems: "center",
+    width: "60%",
+    height: 90,
     margin: 10,
     backgroundColor: "skyblue",
     borderRadius: 30,
