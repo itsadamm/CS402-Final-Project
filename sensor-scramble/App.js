@@ -702,7 +702,26 @@ const LeaderboardScreen = ({ navigation, route }) => {
 };
 
 const AboutScreen = ({navigation, route}) => {
-  return <Text>About Sensor Scramble!</Text>;
+  return <View>
+  <Text>About Sensor Scramble!</Text>
+  <Text>The Sensor Scramble mobile app offers an interactive gaming experience utilizing your</Text>
+  <Text>device's camera and motion sensors. Players can engage in two distinct types of games:</Text>
+  <Text>aligning the device’s orientation with specified target angles in a camera tilt game </Text>
+  <Text>and controlling a virtual ball in an accelerometer-based minigame to hit targets for scores.</Text>
+  <Text></Text>
+  <Text></Text>
+  <Text>About Us:</Text>
+  <Text>We are just two Computer Science students hoping to make a statement on this beautiful planet.</Text>
+  <Text>This project was a project. We worked on it. It's working (we hope).   </Text>
+  <Text>Consider donating, thanks!</Text>
+  <Text></Text>
+  <Text></Text>
+  <Text>Venmo Donations:</Text>
+  <Text>@Adamadri</Text>
+  <Text>or</Text>
+  <Text>@bradeetee</Text>
+  <Text></Text>
+</View>;
 };
 
 const styles = StyleSheet.create({
