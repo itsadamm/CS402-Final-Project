@@ -103,7 +103,7 @@ const HomeScreen = ({navigation}) => {
 
 const AccelerometerGameScreen = ({navigation, route}) => {
   const SCREEN_WIDTH = useWindowDimensions().width;
-  const SCREEN_HEIGHT = useWindowDimensions().height;
+  const SCREEN_HEIGHT = useWindowDimensions().height * .905;
   const [xAcc, setXAcc] = useState(0.0)
   const [yAcc, setYAcc] = useState(0.0)
   const [xPos, setXPos] = useState(-50.0)
@@ -132,9 +132,17 @@ const AccelerometerGameScreen = ({navigation, route}) => {
     const _subscribeSensors = () => {      
       // Accellerometer subscription
       setAccelSubscription(Accelerometer.addListener(accelData => {
-        console.log(accelData)
-        setXAcc(xAcc => xAcc + accelData.x + (Math.sign(xAcc)*-DRAG))
-        setYAcc(yAcc => yAcc + accelData.y + (Math.sign(yAcc)*-DRAG))
+        let adjustedX = accelData.x;
+        let adjustedY = accelData.y;
+    
+        // Check the platform and invert values if it's iOS
+        if (Platform.OS === 'ios') {
+          adjustedX = -adjustedX;
+          adjustedY = -adjustedY;
+        }
+
+        setXAcc(xAcc => xAcc + adjustedX + (Math.sign(xAcc)*-DRAG))
+        setYAcc(yAcc => yAcc + adjustedY + (Math.sign(yAcc)*-DRAG))
       }));
   }
 
@@ -277,7 +285,7 @@ const RoundIntroScreen = ({navigation, route}) => {
   const [targetAngle, setTargetAngle] = React.useState(Math.floor(Math.random() * 361)); // Random angle from 0 to 360
   return <View>
     <Text>Round {route.params.roundNum} !</Text>
-    <Text>Your target value is...{targetAngle}Â° </Text>
+    <Text>Your target value is...{targetAngle}° </Text>
     <Button
       title="Next"
       onPress={() =>
@@ -478,7 +486,7 @@ const RoundEndScreen = ({navigation, route}) => {
   return (
     <View>
         <Image style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 4 / 3, alignSelf: "center" }} source={{ uri: route.params.prevPhoto.uri }} />
-        <Text>You Got: Angle {actualAngle}Â° - Target: {targetAngle}Â° - Score: {String(score)}</Text>
+        <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {String(score)}</Text>
         {route.params.roundNum < 3 ? (
             <Button title="Next Round" onPress={handleNextRound} />
         ) : (
@@ -526,7 +534,7 @@ const RoundEndScreen = ({navigation, route}) => {
 //   }
 //   return <View>
 //     <Image style={{width: SCREEN_WIDTH, height: SCREEN_WIDTH*4/3, alignSelf:"center"}} source={{uri: route.params.prevPhoto.uri,}} />
-//     <Text>You Got: Angle {actualAngle}Â° - Target: {targetAngle}Â° - Score: {score}</Text>
+//     <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {score}</Text>
 //     {nextButton}
 //   </View>;
 // };
