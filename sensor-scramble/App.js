@@ -265,10 +265,11 @@ const AccelerometerGameScreen = ({navigation, route}) => {
 const NewGameScreen = ({navigation, route}) => {
   return <View>
     <Text>Instructions:</Text>
-    <Text>There will be three rounds, each with an increasing number of rules.</Text>
-    <Text>Round 1: Angle/Tilt</Text>
-    <Text>Round 2: + Cardinal Direction</Text>
-    <Text>Round 3: + Average Camera Color</Text>
+    <Text>There will be three rounds.</Text>
+    <Text>Each round you will want to set a good 0 degree starting point, then press the "Set Zero" button.</Text>
+    <Text>Next, move your mobile device like a compass to try and match the target angle!</Text>
+    <Text>Your score correlates with how close you were to the targer angle. </Text>
+    <Text>Good Luck! </Text>
     <Button
       title="START!"
       onPress={() =>
