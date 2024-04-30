@@ -263,7 +263,8 @@ const AccelerometerGameScreen = ({navigation, route}) => {
 // is set to  home -> leaderboard
 
 const NewGameScreen = ({navigation, route}) => {
-  return <View>
+  return <View style={styles.container}>
+    <ImageBackground source={require('./assets/paper8.png')} resizeMode="cover" style={styles.image}>
     <Text>Instructions:</Text>
     <Text>There will be three rounds.</Text>
     <Text>Each round you will want to set a good 0 degree starting point, then press the "Set Zero" button.</Text>
@@ -286,12 +287,14 @@ const NewGameScreen = ({navigation, route}) => {
         )
       }
       />
+    </ImageBackground>
   </View>;
 };
 
 const RoundIntroScreen = ({navigation, route}) => {
   const [targetAngle, setTargetAngle] = React.useState(Math.floor(Math.random() * 361)); // Random angle from 0 to 360
-  return <View>
+  return <View style={styles.container}>
+    <ImageBackground source={require('./assets/paper8.png')} resizeMode="cover" style={styles.image}>
     <Text>Round {route.params.roundNum} !</Text>
     <Text>Your target value is...{targetAngle}� </Text>
     <Button
@@ -310,6 +313,7 @@ const RoundIntroScreen = ({navigation, route}) => {
         )
       }
     />
+    </ImageBackground>
   </View>;
 };
 
@@ -495,7 +499,8 @@ const RoundEndScreen = ({navigation, route}) => {
   };
 
   return (
-    <View>
+    <View style={styles.container}>
+        <ImageBackground source={require('./assets/paper8.png')} resizeMode="cover" style={styles.image}>
         <Image style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 4 / 3, alignSelf: "center" }} source={{ uri: route.params.prevPhoto.uri }} />
         <Text>You Got: Angle {actualAngle}� - Target: {targetAngle}� - Score: {String(score)}</Text>
         {route.params.roundNum < 3 ? (
@@ -503,6 +508,7 @@ const RoundEndScreen = ({navigation, route}) => {
         ) : (
             <Button title="See Results" onPress={handleFinalRoundEnd} />
         )}
+        </ImageBackground>
     </View>
 );
 };
@@ -607,6 +613,7 @@ const ResultsScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
+      <ImageBackground source={require('./assets/paper8.png')} resizeMode="cover" style={styles.image}>
       <Text>Total Score: {String(totalScore)}</Text>
       <TextInput
         style={styles.input}
@@ -618,6 +625,7 @@ const ResultsScreen = ({ navigation, route }) => {
         title="Submit and view Leaderboard"
         onPress={handleSubmit}
       />
+      </ImageBackground>
     </View>
   );
 };
@@ -702,7 +710,8 @@ const LeaderboardScreen = ({ navigation, route }) => {
 };
 
 const AboutScreen = ({navigation, route}) => {
-  return <View>
+  return <View style={styles.container}> 
+  <ImageBackground source={require('./assets/paper8.png')} resizeMode="cover" style={styles.image}>
   <Text>About Sensor Scramble!</Text>
   <Text>The Sensor Scramble mobile app offers an interactive gaming experience utilizing your</Text>
   <Text>device's camera and motion sensors. Players can engage in two distinct types of games:</Text>
@@ -721,6 +730,7 @@ const AboutScreen = ({navigation, route}) => {
   <Text>or</Text>
   <Text>@bradeetee</Text>
   <Text></Text>
+  </ImageBackground>
 </View>;
 };
 
