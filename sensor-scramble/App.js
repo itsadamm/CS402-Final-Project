@@ -99,7 +99,7 @@ const HomeScreen = ({navigation}) => {
 
 const AccelerometerGameScreen = ({navigation, route}) => {
   const SCREEN_WIDTH = useWindowDimensions().width;
-  const SCREEN_HEIGHT = useWindowDimensions().height;
+  const SCREEN_HEIGHT = useWindowDimensions().height * .905;
   const [xAcc, setXAcc] = useState(0.0)
   const [yAcc, setYAcc] = useState(0.0)
   const [xPos, setXPos] = useState(-50.0)
@@ -128,8 +128,17 @@ const AccelerometerGameScreen = ({navigation, route}) => {
     const _subscribeSensors = () => {      
       // Accellerometer subscription
       setAccelSubscription(Accelerometer.addListener(accelData => {
-        setXAcc(xAcc => xAcc + accelData.x + (Math.sign(xAcc)*-DRAG))
-        setYAcc(yAcc => yAcc + accelData.y + (Math.sign(yAcc)*-DRAG))
+        let adjustedX = accelData.x;
+        let adjustedY = accelData.y;
+    
+        // Check the platform and invert values if it's iOS
+        if (Platform.OS === 'ios') {
+          adjustedX = -adjustedX;
+          adjustedY = -adjustedY;
+        }
+
+        setXAcc(xAcc => xAcc + adjustedX + (Math.sign(xAcc)*-DRAG))
+        setYAcc(yAcc => yAcc + adjustedY + (Math.sign(yAcc)*-DRAG))
       }));
   }
 
