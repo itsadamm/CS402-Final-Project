@@ -265,12 +265,14 @@ const AccelerometerGameScreen = ({navigation, route}) => {
 const NewGameScreen = ({navigation, route}) => {
   return <View style={styles.container}>
     <ImageBackground source={require('./assets/paper8.png')} resizeMode="cover" style={styles.image}>
-    <Text>Instructions:</Text>
-    <Text>There will be three rounds.</Text>
-    <Text>Each round you will want to set a good 0 degree starting point, then press the "Set Zero" button.</Text>
-    <Text>Next, move your mobile device like a compass to try and match the target angle!</Text>
-    <Text>Your score correlates with how close you were to the targer angle. </Text>
-    <Text>Good Luck! </Text>
+      <View style={styles.textBox}>
+        <Text style={styles.aboutText}>Instructions:</Text>
+        <Text style={styles.aboutTextBody}>There will be three rounds.</Text>
+        <Text style={styles.aboutTextBody}>Each round you will want to set a good 0 degree starting point, then press the "Set Zero" button.</Text>
+        <Text style={styles.aboutTextBody}>Next, move your mobile device like a compass to try and match the target angle!</Text>
+        <Text style={styles.aboutTextBody}>Your score correlates with how close you were to the targer angle. </Text>
+        <Text style={styles.aboutText}>Good Luck! </Text>
+      </View>
     <Button
       title="START!"
       onPress={() =>
@@ -295,8 +297,10 @@ const RoundIntroScreen = ({navigation, route}) => {
   const [targetAngle, setTargetAngle] = React.useState(Math.floor(Math.random() * 361)); // Random angle from 0 to 360
   return <View style={styles.container}>
     <ImageBackground source={require('./assets/paper8.png')} resizeMode="cover" style={styles.image}>
-    <Text>Round {route.params.roundNum} !</Text>
-    <Text>Your target value is...{targetAngle}? </Text>
+    <View style={styles.textBox}>
+      <Text style={styles.aboutText}>Round {route.params.roundNum} !</Text>
+      <Text style={styles.aboutText}>Your target value is...{targetAngle}! </Text>
+    </View>
     <Button
       title="Next"
       onPress={() =>
@@ -502,7 +506,10 @@ const RoundEndScreen = ({navigation, route}) => {
     <View style={styles.container}>
         <ImageBackground source={require('./assets/paper8.png')} resizeMode="cover" style={styles.image}>
         <Image style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 4 / 3, alignSelf: "center" }} source={{ uri: route.params.prevPhoto.uri }} />
-        <Text>You Got: Angle {actualAngle}? - Target: {targetAngle}? - Score: {String(score)}</Text>
+        <View style={styles.textBox}>
+          <Text style={styles.aboutTextBody}>You Got: Angle {actualAngle.toFixed(2)} | Target: {targetAngle}</Text>
+          <Text style={styles.aboutText}>Score: {String(score)}</Text>
+        </View>
         {route.params.roundNum < 3 ? (
             <Button title="Next Round" onPress={handleNextRound} />
         ) : (
@@ -716,29 +723,47 @@ const LeaderboardScreen = ({ navigation, route }) => {
 const AboutScreen = ({navigation, route}) => {
   return <View style={styles.container}> 
   <ImageBackground source={require('./assets/paper8.png')} resizeMode="cover" style={styles.image}>
-  <Text>About Sensor Scramble!</Text>
-  <Text>The Sensor Scramble mobile app offers an interactive gaming experience utilizing your</Text>
-  <Text>device's camera and motion sensors. Players can engage in two distinct types of games:</Text>
-  <Text>aligning the device’s orientation with specified target angles in a camera tilt game </Text>
-  <Text>and controlling a virtual ball in an accelerometer-based minigame to hit targets for scores.</Text>
-  <Text></Text>
-  <Text></Text>
-  <Text>About Us:</Text>
-  <Text>We are just two Computer Science students hoping to make a statement on this beautiful planet.</Text>
-  <Text>This project was a project. We worked on it. It's working (we hope).   </Text>
-  <Text>Consider donating, thanks!</Text>
-  <Text></Text>
-  <Text></Text>
-  <Text>Venmo Donations:</Text>
-  <Text>@Adamadri</Text>
-  <Text>or</Text>
-  <Text>@bradeetee</Text>
-  <Text></Text>
+    <View style={styles.textBox}>
+      <Text style={styles.aboutText}>About Sensor Scramble!</Text>
+      <Text style={styles.aboutTextBody}>The Sensor Scramble mobile app offers an interactive gaming experience utilizing your device's camera and motion sensors. Players can engage in two distinct types of games: aligning the device's orientation with specified target angles in a camera tilt game and controlling a virtual ball in an accelerometer-based minigame to hit targets for scores.</Text>
+      <Text></Text>
+      <Text></Text>
+      <Text style={styles.aboutText}>About Us:</Text>
+      <Text style={styles.aboutTextBody}>We are just two Computer Science students hoping to make a statement on this beautiful planet. This project was a project. We worked on it. It's working (we hope).</Text>
+      <Text></Text>
+      <Text style={styles.aboutText}>Consider donating, thanks!</Text>
+      <Text style={styles.aboutTextBody}>Venmo Donations:</Text>
+      <Text style={styles.aboutTextBody}>@Adamadri or @bradeetee</Text>
+    </View>
   </ImageBackground>
 </View>;
 };
 
 const styles = StyleSheet.create({
+  textBox: {
+    alignItems: "center",
+    alignSelf: "center",
+    width: "90%",
+    margin: 10,
+    padding: 10,
+    backgroundColor: "salmon",
+    borderRadius: 30,
+    borderColor: "maroon",
+    borderWidth: 5,
+  },
+
+  aboutText: {
+    width: "100%",
+    textAlign: "center",
+    fontSize: 25
+  },
+
+  aboutTextBody: {
+    width: "100%",
+    textAlign: "center",
+    fontSize: 15
+  },
+
   leaderboardContainer: {
     padding: 15,
     width: "100%",
