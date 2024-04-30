@@ -258,10 +258,11 @@ const AccelerometerGameScreen = ({navigation, route}) => {
 const NewGameScreen = ({navigation, route}) => {
   return <View>
     <Text>Instructions:</Text>
-    <Text>There will be three rounds, each with an increasing number of rules.</Text>
-    <Text>Round 1: Angle/Tilt</Text>
-    <Text>Round 2: + Cardinal Direction</Text>
-    <Text>Round 3: + Average Camera Color</Text>
+    <Text>There will be three rounds.</Text>
+    <Text>Each round you will want to set a good 0 degree starting point, then press the "Set Zero" button.</Text>
+    <Text>Next, move your mobile device like a compass to try and match the target angle!</Text>
+    <Text>Your score correlates with how close you were to the targer angle. </Text>
+    <Text>Good Luck! </Text>
     <Button
       title="START!"
       onPress={() =>
@@ -285,7 +286,7 @@ const RoundIntroScreen = ({navigation, route}) => {
   const [targetAngle, setTargetAngle] = React.useState(Math.floor(Math.random() * 361)); // Random angle from 0 to 360
   return <View>
     <Text>Round {route.params.roundNum} !</Text>
-    <Text>Your target value is...{targetAngle}° </Text>
+    <Text>Your target value is...{targetAngle}ï¿½ </Text>
     <Button
       title="Next"
       onPress={() =>
@@ -486,7 +487,7 @@ const RoundEndScreen = ({navigation, route}) => {
   return (
     <View>
         <Image style={{ width: SCREEN_WIDTH, height: SCREEN_WIDTH * 4 / 3, alignSelf: "center" }} source={{ uri: route.params.prevPhoto.uri }} />
-        <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {String(score)}</Text>
+        <Text>You Got: Angle {actualAngle}ï¿½ - Target: {targetAngle}ï¿½ - Score: {String(score)}</Text>
         {route.params.roundNum < 3 ? (
             <Button title="Next Round" onPress={handleNextRound} />
         ) : (
@@ -534,7 +535,7 @@ const RoundEndScreen = ({navigation, route}) => {
 //   }
 //   return <View>
 //     <Image style={{width: SCREEN_WIDTH, height: SCREEN_WIDTH*4/3, alignSelf:"center"}} source={{uri: route.params.prevPhoto.uri,}} />
-//     <Text>You Got: Angle {actualAngle}° - Target: {targetAngle}° - Score: {score}</Text>
+//     <Text>You Got: Angle {actualAngle}ï¿½ - Target: {targetAngle}ï¿½ - Score: {score}</Text>
 //     {nextButton}
 //   </View>;
 // };
